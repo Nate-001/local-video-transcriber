@@ -19,23 +19,34 @@
   body {
     font-family: system-ui, -apple-system, sans-serif;
     max-width: 1400px;
-    margin: 1.5em auto;
-    padding: 0 1.2em;
+    margin: 0 auto;
+    padding: 1em 1.2em;
     background: var(--bg);
     color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   .workspace {
     display: grid;
     grid-template-columns: 1.8fr 1.1fr 1.1fr;
+    grid-template-rows: minmax(0, 1fr);
     gap: 1.5em;
-    align-items: start;
     margin-top: 1em;
+    flex: 1;
+    min-height: 0;
   }
-  .col { min-width: 0; display: flex; flex-direction: column; gap: 1.2em; }
-  .col-video { position: sticky; top: 1em; }
+  /* Each column scrolls on its own so the page itself never scrolls. */
+  .col {
+    min-width: 0; min-height: 0;
+    display: flex; flex-direction: column; gap: 1.2em;
+    overflow-y: auto;
+  }
   @media (max-width: 1100px) {
-    .workspace { grid-template-columns: 1fr; }
-    .col-video { position: static; }
+    body { height: auto; overflow: visible; }
+    .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
+    .col { overflow: visible; }
   }
   h1 { margin: 0 0 0.1em; font-size: 1.6em; }
   .sub { color: var(--muted); margin: 0; font-size: 0.9em; }
@@ -45,6 +56,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--panel);
+    flex: none;
   }
   details.setup > summary {
     cursor: pointer; padding: 0.6em 0.9em; list-style: none;
@@ -184,8 +196,6 @@
     border-radius: 10px;
     padding: 0.8em;
     min-height: 8em;
-    max-height: calc(100vh - 18em);
-    overflow-y: auto;
     font-size: 0.92em;
   }
   .msg { margin: 0.4em 0; padding: 0.6em 0.8em; border-radius: 8px; line-height: 1.45; white-space: pre-wrap; }
@@ -225,8 +235,6 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.8em 1em;
-    max-height: calc(100vh - 10em);
-    overflow-y: auto;
     font-size: 0.92em;
     line-height: 1.5;
   }
@@ -269,7 +277,6 @@
   details.library summary:hover { color: var(--text); }
   .lib-list {
     margin-top: 0.6em; display: flex; flex-direction: column; gap: 0.35em;
-    max-height: 24em; overflow-y: auto;
   }
   .lib-item {
     display: flex; justify-content: space-between; align-items: center;
@@ -593,16 +600,21 @@ player.addEventListener('timeupdate', () => {
   }
 });
 
-// Keep the highlighted segment in view by scrolling the transcript box only
-// (not the whole page) as playback advances.
+// Keep the highlighted segment in view by scrolling its column as playback
+// advances (each column scrolls independently; the page does not).
 function keepSegmentVisible(el) {
-  const c = transcriptBody;
+  const c = el.closest('.col');
   if (!c) return;
   const cr = c.getBoundingClientRect();
   const er = el.getBoundingClientRect();
   if (er.top < cr.top || er.bottom > cr.bottom) {
     c.scrollTop += (er.top - cr.top) - (c.clientHeight - er.height) / 2;
   }
+}
+
+function scrollColToBottom(el) {
+  const c = el.closest('.col');
+  if (c) c.scrollTop = c.scrollHeight;
 }
 
 // Timestamps like [HH:MM:SS] or [MM:SS] anywhere in text.
@@ -908,7 +920,6 @@ function appendMessage(role, content) {
   el.appendChild(roleEl);
   el.appendChild(body);
   chatLog.appendChild(el);
-  chatLog.scrollTop = chatLog.scrollHeight;
   return el;
 }
 
@@ -930,6 +941,7 @@ async function sendChat(messageOverride) {
   status.innerHTML = `<span class="spinner"></span><span>Thinking with <code></code></span><span class="elapsed">0.0s</span>`;
   status.querySelector('code').textContent = model;
   placeholder.insertBefore(status, body);
+  scrollColToBottom(chatLog);
 
   const t0 = performance.now();
   const elapsedEl = status.querySelector('.elapsed');
@@ -959,7 +971,7 @@ async function sendChat(messageOverride) {
       acc += dec.decode(value, { stream: true });
       body.classList.remove('empty');
       body.textContent = acc;
-      chatLog.scrollTop = chatLog.scrollHeight;
+      scrollColToBottom(chatLog);
     }
     status.remove();
   } catch (e) {
