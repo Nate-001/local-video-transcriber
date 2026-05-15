@@ -31,17 +31,32 @@
     align-items: start;
     margin-top: 1em;
   }
-  .col { min-width: 0; }
-  .col > :first-child { margin-top: 0; }
+  .col { min-width: 0; display: flex; flex-direction: column; gap: 1.2em; }
   .col-video { position: sticky; top: 1em; }
   @media (max-width: 1100px) {
     .workspace { grid-template-columns: 1fr; }
     .col-video { position: static; }
   }
-  h1 { margin: 0 0 0.2em; }
-  .sub { color: var(--muted); margin-top: 0; }
+  h1 { margin: 0 0 0.1em; font-size: 1.6em; }
+  .sub { color: var(--muted); margin: 0; font-size: 0.9em; }
 
-  .tabs { display: flex; gap: 0.4em; margin: 1.2em 0 0.8em; }
+  details.setup {
+    margin-top: 1em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+  details.setup > summary {
+    cursor: pointer; padding: 0.6em 0.9em; list-style: none;
+    color: var(--text); font-weight: 600; font-size: 0.9em;
+  }
+  details.setup > summary::-webkit-details-marker { display: none; }
+  details.setup > summary::before { content: "\25B8  "; color: var(--accent); }
+  details.setup[open] > summary::before { content: "\25BE  "; color: var(--accent); }
+  details.setup[open] > summary { border-bottom: 1px solid var(--border); }
+  .setup-body { padding: 0.1em 0.9em 0.8em; }
+
+  .tabs { display: flex; gap: 0.4em; margin: 0.6em 0 0.8em; }
   .tab {
     flex: 1;
     padding: 0.6em 1em;
@@ -61,7 +76,7 @@
   .drop {
     border: 2px dashed var(--border);
     border-radius: 12px;
-    padding: 2.5em 1em;
+    padding: 1.1em 1em;
     text-align: center;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
@@ -133,9 +148,9 @@
   }
   .downloads a:hover { border-color: var(--accent); }
   .err { color: var(--error); white-space: pre-wrap; margin-top: 0.5em; font-size: 0.9em; }
-  .panel { margin-top: 1.5em; padding: 1em; background: var(--panel); border-radius: 10px; border: 1px solid var(--border); }
+  .panel { padding: 1em; background: var(--panel); border-radius: 10px; border: 1px solid var(--border); }
 
-  .summary-panel { margin-bottom: 1.5em; }
+  .summary-panel { margin-bottom: 0; }
   .summary-panel .panel-header {
     display: flex; justify-content: space-between; align-items: center;
     margin: 0 0 0.5em;
@@ -150,7 +165,7 @@
     margin-bottom: 0.6em; display: flex; gap: 0.8em; flex-wrap: wrap;
   }
   .summary-body { white-space: pre-wrap; line-height: 1.5; font-size: 0.92em; }
-  .summary-empty {
+  .summary-empty, .transcript-empty-state {
     background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
     padding: 1.5em 1em; text-align: center; color: var(--muted); font-size: 0.9em;
   }
@@ -203,7 +218,7 @@
     background: transparent; color: var(--muted); border: 1px solid var(--border);
   }
 
-  .transcript-panel { margin-top: 1.5em; }
+  .transcript-panel { margin-top: 0; }
   .transcript-panel h2 { font-size: 1.05em; margin: 0 0 0.5em; }
   .transcript-body {
     background: var(--panel);
@@ -236,7 +251,7 @@
   }
   .ts-link:hover { text-decoration: underline; }
 
-  .player-wrap { margin-bottom: 1.2em; }
+  .player-wrap { margin-bottom: 0; }
   .player-wrap video {
     width: 100%; max-height: 60vh; background: #000;
     border-radius: 10px; border: 1px solid var(--border);
@@ -245,14 +260,17 @@
   .tseg .ttext { flex: 1; word-break: break-word; }
   .transcript-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 
-  details.library { margin: 2em 0 1em; }
+  details.library { margin: 0; }
   details.library summary {
     cursor: pointer; padding: 0.6em 0.9em;
     background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
     color: var(--muted); font-size: 0.9em;
   }
   details.library summary:hover { color: var(--text); }
-  .lib-list { margin-top: 0.6em; display: flex; flex-direction: column; gap: 0.35em; }
+  .lib-list {
+    margin-top: 0.6em; display: flex; flex-direction: column; gap: 0.35em;
+    max-height: 24em; overflow-y: auto;
+  }
   .lib-item {
     display: flex; justify-content: space-between; align-items: center;
     padding: 0.55em 0.8em; border: 1px solid var(--border); border-radius: 6px;
@@ -269,7 +287,9 @@
 <h1>Local Video Transcriber</h1>
 <p class="sub">faster-whisper + CUDA. Upload a file, pick one already on disk, or paste a YouTube/yt-dlp URL.</p>
 
-<div class="setup">
+<details class="setup" id="setupPanel" open>
+<summary>New transcription</summary>
+<div class="setup-body">
 <div class="tabs">
   <button class="tab active" data-source="upload">Upload</button>
   <button class="tab" data-source="path">Local path</button>
@@ -317,7 +337,8 @@
   </label>
   <button id="go">Transcribe</button>
 </div>
-</div><!-- /setup -->
+</div><!-- /setup-body -->
+</details>
 
 <div class="workspace">
 <section class="col col-video">
@@ -331,9 +352,19 @@
     <div class="downloads" id="downloads" hidden></div>
     <div class="err" id="err"></div>
   </div>
+
+  <details class="library" id="libraryWrap" open>
+    <summary id="librarySummary">Past transcripts</summary>
+    <div class="lib-list" id="libraryList">
+      <div class="lib-empty">loading…</div>
+    </div>
+  </details>
 </section>
 
 <section class="col col-transcript">
+  <div id="transcriptEmpty" class="transcript-empty-state">
+    Select a past transcript on the left, or start a new transcription above.
+  </div>
   <div id="transcript" class="transcript-panel" hidden>
     <h2>Transcript</h2>
     <div class="transcript-body" id="transcriptBody"></div>
@@ -383,13 +414,6 @@
   </div>
 </aside>
 </div><!-- /workspace -->
-
-<details class="library" id="libraryWrap" open>
-  <summary id="librarySummary">Past transcripts</summary>
-  <div class="lib-list" id="libraryList">
-    <div class="lib-empty">loading…</div>
-  </div>
-</details>
 
 <script>
 const drop = document.getElementById('drop');
@@ -503,6 +527,8 @@ async function poll(jobId) {
 }
 
 async function showJobDone(jobId, r) {
+  // Collapse the setup panel so the workspace gets the full screen.
+  document.getElementById('setupPanel').open = false;
   panel.hidden = false;
   errEl.textContent = '';
   bar.style.width = '100%';
@@ -730,6 +756,7 @@ const transcriptPanel = document.getElementById('transcript');
 const transcriptBody = document.getElementById('transcriptBody');
 
 async function renderTranscript(jobId) {
+  document.getElementById('transcriptEmpty').hidden = true;
   transcriptPanel.hidden = false;
   transcriptBody.innerHTML = '<div class="transcript-empty">loading…</div>';
   segmentRanges = [];
