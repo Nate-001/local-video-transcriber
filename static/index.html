@@ -509,7 +509,7 @@ async function showJobDone(jobId, r) {
   downloadsEl.innerHTML = ['txt','srt','vtt','json']
     .map(f => `<a href="/api/download/${jobId}/${f}" download>Download .${f}</a>`)
     .join('');
-  attachMedia(jobId);
+  attachMedia(jobId, r.language);
   await renderTranscript(jobId);
   loadSummary(jobId);
   enableChat(jobId);
@@ -523,16 +523,27 @@ const player = document.getElementById('player');
 let activeSegmentEl = null;
 let segmentRanges = [];
 
-function attachMedia(jobId) {
+function attachMedia(jobId, language) {
   player.pause();
   player.removeAttribute('src');
+  player.querySelectorAll('track').forEach(t => t.remove());
   player.load();
   playerWrap.hidden = true;
   fetch(`/api/media/${jobId}`, { method: 'HEAD' }).then(r => {
-    if (r.ok) {
-      player.src = `/api/media/${jobId}`;
-      playerWrap.hidden = false;
-    }
+    if (!r.ok) return;
+    player.src = `/api/media/${jobId}`;
+    // WebVTT captions from the transcript — gives the player a CC toggle.
+    const track = document.createElement('track');
+    track.kind = 'captions';
+    track.label = 'Transcript';
+    track.srclang = language || 'en';
+    track.src = `/api/download/${jobId}/vtt`;
+    track.default = true;
+    track.addEventListener('load', () => {
+      for (const tt of player.textTracks) tt.mode = 'showing';
+    });
+    player.appendChild(track);
+    playerWrap.hidden = false;
   }).catch(() => {});
 }
 
