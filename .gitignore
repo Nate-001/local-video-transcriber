@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Runtime data — user uploads, downloaded media, and generated transcripts.
+# These are recreated at runtime and must not be published.
+uploads/
+outputs/
+downloads/
+
+# Media files (avoid committing test clips by accident)
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi
+*.flv
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+
+# Secrets / local config
+*.env
+.env
+.env.*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

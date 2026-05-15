@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Video Transcriber</title>
+<style>
+  :root {
+    color-scheme: dark light;
+    --bg: #16181d;
+    --panel: #1e2128;
+    --border: #2c313c;
+    --muted: #8a93a3;
+    --text: #e6e9ef;
+    --accent: #4a9eff;
+    --error: #ff6464;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 1400px;
+    margin: 1.5em auto;
+    padding: 0 1.2em;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 1.5em;
+    align-items: start;
+  }
+  .sidebar { position: sticky; top: 1em; }
+  @media (max-width: 1000px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+  }
+  h1 { margin: 0 0 0.2em; }
+  .sub { color: var(--muted); margin-top: 0; }
+
+  .tabs { display: flex; gap: 0.4em; margin: 1.2em 0 0.8em; }
+  .tab {
+    flex: 1;
+    padding: 0.6em 1em;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    text-align: center;
+  }
+  .tab.active { color: var(--text); border-color: var(--accent); background: rgba(74,158,255,0.08); }
+
+  .source { display: none; }
+  .source.active { display: block; }
+
+  .drop {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 2.5em 1em;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    background: var(--panel);
+  }
+  .drop.over {
+    border-color: var(--accent);
+    background: rgba(74, 158, 255, 0.08);
+  }
+  .drop p { margin: 0.4em 0; }
+  .filename { color: var(--muted); font-family: ui-monospace, monospace; font-size: 0.9em; }
+
+  .row { display: flex; gap: 1em; margin: 1.2em 0; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; font-size: 0.8em; gap: 0.3em; color: var(--muted); }
+  select, input[type=text] {
+    padding: 0.55em 0.7em;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+  }
+  .source input[type=text] { width: 100%; }
+  .source label { width: 100%; }
+
+  button {
+    padding: 0.7em 1.4em;
+    border-radius: 6px;
+    border: 0;
+    background: var(--accent);
+    color: white;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .progress {
+    background: var(--panel);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 8px;
+    margin: 1em 0 0.5em;
+    border: 1px solid var(--border);
+  }
+  .progress > div {
+    background: var(--accent);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+  }
+  .status {
+    font-family: ui-monospace, monospace;
+    font-size: 0.85em;
+    color: var(--muted);
+  }
+  .downloads { margin-top: 1em; }
+  .downloads a {
+    display: inline-block;
+    padding: 0.55em 1em;
+    margin: 0.3em 0.3em 0 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.85em;
+  }
+  .downloads a:hover { border-color: var(--accent); }
+  .err { color: var(--error); white-space: pre-wrap; margin-top: 0.5em; font-size: 0.9em; }
+  .panel { margin-top: 1.5em; padding: 1em; background: var(--panel); border-radius: 10px; border: 1px solid var(--border); }
+
+  .summary-panel { margin-bottom: 1.5em; }
+  .summary-panel .panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 0 0 0.5em;
+  }
+  .summary-panel h2 { font-size: 1.05em; margin: 0; }
+  .summary-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.9em 1em;
+  }
+  .summary-meta {
+    font-size: 0.75em; color: var(--muted); font-family: ui-monospace, monospace;
+    margin-bottom: 0.6em; display: flex; gap: 0.8em; flex-wrap: wrap;
+  }
+  .summary-body { white-space: pre-wrap; line-height: 1.5; font-size: 0.92em; }
+  .summary-empty {
+    background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
+    padding: 1.5em 1em; text-align: center; color: var(--muted); font-size: 0.9em;
+  }
+  .summary-actions { margin-top: 0.6em; display: flex; gap: 0.5em; align-items: center; }
+  .ghost.mini { padding: 0.35em 0.7em; font-size: 0.8em; }
+
+  .chat { margin-top: 0; }
+  .chat h2 { font-size: 1.05em; margin: 0 0 0.5em; }
+  .chat-empty {
+    background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
+    padding: 1.5em 1em; text-align: center; color: var(--muted); font-size: 0.9em;
+  }
+  .chat-log {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8em;
+    min-height: 8em;
+    max-height: calc(100vh - 18em);
+    overflow-y: auto;
+    font-size: 0.92em;
+  }
+  .msg { margin: 0.4em 0; padding: 0.6em 0.8em; border-radius: 8px; line-height: 1.45; white-space: pre-wrap; }
+  .msg.user { background: rgba(74,158,255,0.15); border: 1px solid rgba(74,158,255,0.3); }
+  .msg.assistant { background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+  .msg .role { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2em; }
+  .msg .body { white-space: pre-wrap; line-height: 1.45; }
+  .msg .body.empty::after { content: ""; }
+  .gen-status {
+    display: flex; align-items: center; gap: 0.5em;
+    color: var(--muted); font-size: 0.78em;
+    margin: 0 0 0.4em;
+  }
+  .gen-status code {
+    background: rgba(255,255,255,0.05); padding: 0 0.35em;
+    border-radius: 3px; font-size: 0.95em;
+  }
+  .gen-status .elapsed { font-family: ui-monospace, monospace; }
+  .spinner {
+    display: inline-block; width: 0.85em; height: 0.85em;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .chat-input { display: flex; gap: 0.5em; margin-top: 0.6em; }
+  .chat-input input { flex: 1; }
+  .chat-controls { display: flex; gap: 0.5em; align-items: end; margin-top: 0.6em; flex-wrap: wrap; }
+  .chat-controls .ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+  }
+
+  .transcript-panel { margin-top: 1.5em; }
+  .transcript-panel h2 { font-size: 1.05em; margin: 0 0 0.5em; }
+  .transcript-body {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8em 1em;
+    max-height: 30em;
+    overflow-y: auto;
+    font-size: 0.92em;
+    line-height: 1.5;
+  }
+  .tseg { display: flex; gap: 0.9em; padding: 0.2em 0; }
+  .tseg .tts {
+    color: var(--muted); font-family: ui-monospace, monospace;
+    font-size: 0.78em; flex-shrink: 0; min-width: 5em;
+    padding-top: 0.2em;
+  }
+  .tseg .tts.clickable { cursor: pointer; color: var(--accent); }
+  .tseg .tts.clickable:hover { text-decoration: underline; }
+  .tseg.active {
+    background: rgba(74,158,255,0.20);
+    border-radius: 4px;
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .tseg.active .ttext { color: #fff; }
+
+  .ts-link {
+    color: var(--accent); cursor: pointer;
+    font-family: ui-monospace, monospace;
+  }
+  .ts-link:hover { text-decoration: underline; }
+
+  .player-wrap { margin-bottom: 1.2em; }
+  .player-wrap video {
+    width: 100%; max-height: 60vh; background: #000;
+    border-radius: 10px; border: 1px solid var(--border);
+    display: block;
+  }
+  .tseg .ttext { flex: 1; word-break: break-word; }
+  .transcript-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
+
+  details.library { margin: 2em 0 1em; }
+  details.library summary {
+    cursor: pointer; padding: 0.6em 0.9em;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--muted); font-size: 0.9em;
+  }
+  details.library summary:hover { color: var(--text); }
+  .lib-list { margin-top: 0.6em; display: flex; flex-direction: column; gap: 0.35em; }
+  .lib-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.55em 0.8em; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--panel); cursor: pointer; gap: 0.8em;
+  }
+  .lib-item:hover { border-color: var(--accent); }
+  .lib-item.active { border-color: var(--accent); background: rgba(74,158,255,0.08); }
+  .lib-name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-meta { color: var(--muted); font-size: 0.8em; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .lib-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
+</style>
+</head>
+<body>
+<h1>Local Video Transcriber</h1>
+<p class="sub">faster-whisper + CUDA. Upload a file, pick one already on disk, or paste a YouTube/yt-dlp URL.</p>
+
+<div class="layout">
+<div class="main">
+
+<div class="tabs">
+  <button class="tab active" data-source="upload">Upload</button>
+  <button class="tab" data-source="path">Local path</button>
+  <button class="tab" data-source="url">URL</button>
+</div>
+
+<div class="source active" data-source="upload">
+  <div id="drop" class="drop">
+    <p><strong>Drop a file here</strong> or click to browse</p>
+    <p class="filename" id="filename">No file selected</p>
+    <input id="file" type="file" accept="video/*,audio/*" hidden>
+  </div>
+</div>
+
+<div class="source" data-source="path">
+  <label>Local file path
+    <input id="pathInput" type="text" placeholder="Z:\Videos\example.mp4">
+  </label>
+</div>
+
+<div class="source" data-source="url">
+  <label>Video URL (YouTube, Vimeo, anything yt-dlp supports)
+    <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=...">
+  </label>
+</div>
+
+<div class="row">
+  <label>Model
+    <select id="model">
+      <option value="tiny">tiny (fastest)</option>
+      <option value="base" selected>base</option>
+      <option value="small">small</option>
+      <option value="medium">medium</option>
+      <option value="large-v3">large-v3 (best)</option>
+    </select>
+  </label>
+  <label>Language
+    <input id="language" type="text" placeholder="auto" size="6">
+  </label>
+  <label>Device
+    <select id="device">
+      <option value="cuda" selected>cuda</option>
+      <option value="cpu">cpu</option>
+    </select>
+  </label>
+  <button id="go">Transcribe</button>
+</div>
+
+<div id="playerWrap" class="player-wrap" hidden>
+  <video id="player" controls preload="metadata"></video>
+</div>
+
+<div id="panel" class="panel" hidden>
+  <div class="status" id="status">queued</div>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="downloads" id="downloads" hidden></div>
+  <div class="err" id="err"></div>
+</div>
+
+<div id="transcript" class="transcript-panel" hidden>
+  <h2>Transcript</h2>
+  <div class="transcript-body" id="transcriptBody"></div>
+</div>
+
+<details class="library" id="libraryWrap" open>
+  <summary id="librarySummary">Past transcripts</summary>
+  <div class="lib-list" id="libraryList">
+    <div class="lib-empty">loading…</div>
+  </div>
+</details>
+
+</div><!-- /main -->
+
+<aside class="sidebar">
+  <div class="summary-panel">
+    <div class="panel-header">
+      <h2>Summary</h2>
+      <button id="summaryRegen" class="ghost mini" hidden>Regenerate</button>
+    </div>
+    <div id="summaryEmpty" class="summary-empty">
+      Transcribe or load a past transcript to see a summary.
+    </div>
+    <div id="summaryView" hidden>
+      <div class="summary-card">
+        <div class="summary-meta" id="summaryMeta"></div>
+        <div class="summary-body" id="summaryBody"></div>
+      </div>
+      <div class="gen-status" id="summaryStatus" hidden>
+        <span class="spinner"></span><span>Generating summary with <code id="summaryStatusModel"></code></span><span class="elapsed" id="summaryElapsed">0.0s</span>
+      </div>
+      <div class="err" id="summaryErr"></div>
+    </div>
+  </div>
+
+  <div class="chat">
+    <h2>Ask follow-ups</h2>
+    <div id="chatEmpty" class="chat-empty">
+      Load a transcript to ask questions about it.
+    </div>
+    <div id="chat" hidden>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-input">
+        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
+        <button id="chatSend">Send</button>
+      </div>
+      <div class="chat-controls">
+        <label>Model
+          <select id="chatModel"><option value="">loading…</option></select>
+        </label>
+        <button id="chatReset" class="ghost">Clear chat</button>
+      </div>
+      <div class="err" id="chatErr"></div>
+    </div>
+  </div>
+</aside>
+
+</div><!-- /layout -->
+
+<script>
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+const filenameEl = document.getElementById('filename');
+const pathInput = document.getElementById('pathInput');
+const urlInput = document.getElementById('urlInput');
+const goBtn = document.getElementById('go');
+const panel = document.getElementById('panel');
+const bar = document.getElementById('bar');
+const statusEl = document.getElementById('status');
+const downloadsEl = document.getElementById('downloads');
+const errEl = document.getElementById('err');
+
+let currentFile = null;
+let activeSource = 'upload';
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    activeSource = tab.dataset.source;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.source').forEach(s => s.classList.toggle('active', s.dataset.source === activeSource));
+  });
+});
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  currentFile = f;
+  filenameEl.textContent = `${f.name}  (${(f.size/1024/1024).toFixed(1)} MB)`;
+}
+
+goBtn.addEventListener('click', async () => {
+  const fd = new FormData();
+  fd.append('source_type', activeSource);
+  fd.append('model', document.getElementById('model').value);
+  fd.append('language', document.getElementById('language').value);
+  fd.append('device', document.getElementById('device').value);
+
+  if (activeSource === 'upload') {
+    if (!currentFile) { alert('Pick a file first.'); return; }
+    fd.append('file', currentFile);
+  } else if (activeSource === 'path') {
+    if (!pathInput.value.trim()) { alert('Enter a local file path.'); return; }
+    fd.append('path', pathInput.value.trim());
+  } else if (activeSource === 'url') {
+    if (!urlInput.value.trim()) { alert('Enter a URL.'); return; }
+    fd.append('url', urlInput.value.trim());
+  }
+
+  goBtn.disabled = true;
+  panel.hidden = false;
+  downloadsEl.hidden = true;
+  downloadsEl.innerHTML = '';
+  errEl.textContent = '';
+  bar.style.width = '0%';
+  statusEl.textContent = activeSource === 'upload' ? 'uploading…' : 'starting…';
+
+  let resp;
+  try {
+    resp = await fetch('/api/transcribe', { method: 'POST', body: fd });
+  } catch (e) {
+    errEl.textContent = 'Request failed: ' + e.message;
+    goBtn.disabled = false;
+    return;
+  }
+  if (!resp.ok) {
+    errEl.textContent = 'Request failed: ' + (await resp.text());
+    goBtn.disabled = false;
+    return;
+  }
+  const { job_id } = await resp.json();
+  poll(job_id);
+});
+
+async function poll(jobId) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 1000));
+    let job;
+    try {
+      const r = await fetch(`/api/status/${jobId}`);
+      if (!r.ok) throw new Error(await r.text());
+      job = await r.json();
+    } catch (e) { continue; }
+
+    bar.style.width = `${(job.progress * 100).toFixed(1)}%`;
+    statusEl.textContent = `${job.status}  ·  ${(job.progress * 100).toFixed(1)}%`;
+
+    if (job.status === 'done') {
+      showJobDone(jobId, job.result);
+      goBtn.disabled = false;
+      loadLibrary();
+      return;
+    }
+    if (job.status === 'error') {
+      errEl.textContent = job.error || 'Unknown error';
+      goBtn.disabled = false;
+      return;
+    }
+  }
+}
+
+async function showJobDone(jobId, r) {
+  panel.hidden = false;
+  errEl.textContent = '';
+  bar.style.width = '100%';
+  statusEl.textContent =
+    `done · lang=${r.language} (${(r.language_probability*100).toFixed(0)}%) · ` +
+    `${r.segment_count} segments · ${r.duration.toFixed(1)}s`;
+  downloadsEl.hidden = false;
+  downloadsEl.innerHTML = ['txt','srt','vtt','json']
+    .map(f => `<a href="/api/download/${jobId}/${f}" download>Download .${f}</a>`)
+    .join('');
+  attachMedia(jobId);
+  await renderTranscript(jobId);
+  loadSummary(jobId);
+  enableChat(jobId);
+  document.querySelectorAll('.lib-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.jobId === jobId);
+  });
+}
+
+const playerWrap = document.getElementById('playerWrap');
+const player = document.getElementById('player');
+let activeSegmentEl = null;
+let segmentRanges = [];
+
+function attachMedia(jobId) {
+  player.pause();
+  player.removeAttribute('src');
+  player.load();
+  playerWrap.hidden = true;
+  fetch(`/api/media/${jobId}`, { method: 'HEAD' }).then(r => {
+    if (r.ok) {
+      player.src = `/api/media/${jobId}`;
+      playerWrap.hidden = false;
+    }
+  }).catch(() => {});
+}
+
+player.addEventListener('timeupdate', () => {
+  if (!segmentRanges.length) return;
+  const t = player.currentTime;
+  // Linear scan is fine for typical lengths; segments are small.
+  let next = null;
+  for (const r of segmentRanges) {
+    if (t >= r.start && t < r.end) { next = r; break; }
+  }
+  if (next && next.el !== activeSegmentEl) {
+    if (activeSegmentEl) activeSegmentEl.classList.remove('active');
+    next.el.classList.add('active');
+    activeSegmentEl = next.el;
+    if (!player.paused) keepSegmentVisible(next.el);
+  }
+});
+
+// Keep the highlighted segment in view by scrolling the transcript box only
+// (not the whole page) as playback advances.
+function keepSegmentVisible(el) {
+  const c = transcriptBody;
+  if (!c) return;
+  const cr = c.getBoundingClientRect();
+  const er = el.getBoundingClientRect();
+  if (er.top < cr.top || er.bottom > cr.bottom) {
+    c.scrollTop += (er.top - cr.top) - (c.clientHeight - er.height) / 2;
+  }
+}
+
+// Timestamps like [HH:MM:SS] or [MM:SS] anywhere in text.
+const TS_RE = /\[(?:\d{1,2}:)?\d{1,2}:\d{2}\]/g;
+
+function tsToSeconds(label) {
+  const parts = label.replace(/[[\]]/g, '').split(':').map(Number);
+  return parts.length === 3
+    ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+    : parts[0] * 60 + parts[1];
+}
+
+function seekTo(seconds) {
+  if (!player.src) return;
+  player.currentTime = seconds;
+  player.play().catch(() => {});
+  player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Render text into `el`, turning [HH:MM:SS] timestamps into clickable links.
+function renderTimestamped(el, text) {
+  el.textContent = '';
+  let last = 0;
+  for (const m of text.matchAll(TS_RE)) {
+    if (m.index > last) el.appendChild(document.createTextNode(text.slice(last, m.index)));
+    const span = document.createElement('span');
+    span.className = 'ts-link';
+    span.textContent = m[0];
+    span.dataset.t = tsToSeconds(m[0]);
+    el.appendChild(span);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
+}
+
+const summaryEmpty = document.getElementById('summaryEmpty');
+const summaryView = document.getElementById('summaryView');
+const summaryMeta = document.getElementById('summaryMeta');
+const summaryBody = document.getElementById('summaryBody');
+const summaryStatus = document.getElementById('summaryStatus');
+const summaryStatusModel = document.getElementById('summaryStatusModel');
+const summaryElapsed = document.getElementById('summaryElapsed');
+const summaryErr = document.getElementById('summaryErr');
+const summaryRegen = document.getElementById('summaryRegen');
+let summaryJobId = null;
+let summaryTimer = null;
+
+async function loadSummary(jobId) {
+  summaryJobId = jobId;
+  summaryEmpty.hidden = true;
+  summaryView.hidden = false;
+  summaryRegen.hidden = false;
+  summaryErr.textContent = '';
+  summaryBody.textContent = '';
+  summaryMeta.textContent = '';
+  summaryStatus.hidden = true;
+  try {
+    const r = await fetch(`/api/summary/${jobId}`);
+    if (r.ok) {
+      const data = await r.json();
+      renderSavedSummary(data);
+      if (data.error && !data.text) {
+        await streamSummary(jobId);
+      }
+      return;
+    }
+    if (r.status === 404) {
+      await streamSummary(jobId);
+      return;
+    }
+    summaryErr.textContent = `Failed to load summary: ${await r.text()}`;
+  } catch (e) {
+    summaryErr.textContent = e.message;
+  }
+}
+
+function renderSavedSummary(data) {
+  const when = data.generated_at ? new Date(data.generated_at).toLocaleString() : '';
+  summaryMeta.innerHTML = '';
+  if (data.model) {
+    const m = document.createElement('span');
+    m.textContent = `model: ${data.model}`;
+    summaryMeta.appendChild(m);
+  }
+  if (when) {
+    const w = document.createElement('span');
+    w.textContent = when;
+    summaryMeta.appendChild(w);
+  }
+  if (data.error) {
+    summaryErr.textContent = data.error;
+  }
+  renderTimestamped(summaryBody, data.text || '(empty)');
+}
+
+summaryBody.addEventListener('click', e => {
+  const link = e.target.closest('.ts-link');
+  if (link) seekTo(Number(link.dataset.t));
+});
+
+async function streamSummary(jobId) {
+  summaryErr.textContent = '';
+  summaryBody.textContent = '';
+  summaryMeta.innerHTML = '';
+  const model = chatModel.value || '';
+  summaryStatus.hidden = false;
+  summaryStatusModel.textContent = model || '(default)';
+  const t0 = performance.now();
+  if (summaryTimer) clearInterval(summaryTimer);
+  summaryTimer = setInterval(() => {
+    summaryElapsed.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+  }, 100);
+  try {
+    const r = await fetch(`/api/summary/${jobId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    });
+    if (!r.ok) {
+      const detail = (await r.json().catch(() => ({}))).detail || await r.text();
+      summaryErr.textContent = detail;
+      return;
+    }
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let acc = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      acc += dec.decode(value, { stream: true });
+      renderTimestamped(summaryBody, acc);
+    }
+    // After stream completes, refresh meta from saved summary
+    try {
+      const r2 = await fetch(`/api/summary/${jobId}`);
+      if (r2.ok) renderSavedSummary(await r2.json());
+    } catch {}
+  } catch (e) {
+    summaryErr.textContent = e.message;
+  } finally {
+    clearInterval(summaryTimer);
+    summaryStatus.hidden = true;
+  }
+}
+
+summaryRegen.addEventListener('click', () => {
+  if (summaryJobId) streamSummary(summaryJobId);
+});
+
+const transcriptPanel = document.getElementById('transcript');
+const transcriptBody = document.getElementById('transcriptBody');
+
+async function renderTranscript(jobId) {
+  transcriptPanel.hidden = false;
+  transcriptBody.innerHTML = '<div class="transcript-empty">loading…</div>';
+  segmentRanges = [];
+  activeSegmentEl = null;
+  try {
+    const r = await fetch(`/api/download/${jobId}/json`);
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    const segs = data.segments || [];
+    transcriptBody.innerHTML = '';
+    if (!segs.length) {
+      transcriptBody.innerHTML = '<div class="transcript-empty">(empty transcript)</div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const seg of segs) {
+      const row = document.createElement('div');
+      row.className = 'tseg';
+      const ts = document.createElement('div');
+      ts.className = 'tts clickable';
+      ts.textContent = formatTs(seg.start);
+      ts.title = 'Jump to this point in the video';
+      ts.addEventListener('click', () => {
+        if (!player.src) return;
+        player.currentTime = seg.start;
+        player.play().catch(() => {});
+        player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+      const txt = document.createElement('div');
+      txt.className = 'ttext';
+      txt.textContent = seg.text;
+      row.appendChild(ts);
+      row.appendChild(txt);
+      frag.appendChild(row);
+      segmentRanges.push({ start: seg.start, end: seg.end, el: row });
+    }
+    transcriptBody.appendChild(frag);
+  } catch (e) {
+    transcriptBody.innerHTML = `<div class="transcript-empty">Failed to load transcript: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function formatTs(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+const libraryWrap = document.getElementById('libraryWrap');
+const librarySummary = document.getElementById('librarySummary');
+const libraryList = document.getElementById('libraryList');
+
+async function loadLibrary() {
+  let data;
+  try {
+    const r = await fetch('/api/jobs');
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+    data = await r.json();
+  } catch (e) {
+    libraryList.innerHTML = `<div class="lib-empty">Failed to load: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  const jobs = data.jobs || [];
+  librarySummary.textContent = `Past transcripts (${jobs.length})`;
+  if (!jobs.length) {
+    libraryList.innerHTML = `<div class="lib-empty">None yet. Transcribe something below.</div>`;
+    return;
+  }
+  libraryList.innerHTML = '';
+  for (const j of jobs) {
+    const r = j.result || {};
+    const dur = r.duration ? `${Math.floor(r.duration/60)}m${String(Math.round(r.duration%60)).padStart(2,'0')}s` : '?';
+    const when = j.mtime ? new Date(j.mtime * 1000).toLocaleString() : '';
+    const el = document.createElement('div');
+    el.className = 'lib-item';
+    el.dataset.jobId = j.job_id;
+    el.innerHTML = `
+      <div class="lib-name">${escapeHtml(j.filename || j.job_id)}</div>
+      <div class="lib-meta">${escapeHtml(r.language || '?')} · ${dur} · ${when}</div>
+    `;
+    el.addEventListener('click', () => showJobDone(j.job_id, r));
+    libraryList.appendChild(el);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+loadLibrary();
+
+const chatPanel = document.getElementById('chat');
+const chatEmpty = document.getElementById('chatEmpty');
+const chatLog = document.getElementById('chatLog');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const chatReset = document.getElementById('chatReset');
+const chatModel = document.getElementById('chatModel');
+const chatErr = document.getElementById('chatErr');
+let chatJobId = null;
+
+async function enableChat(jobId) {
+  chatJobId = jobId;
+  chatPanel.hidden = false;
+  chatEmpty.hidden = true;
+  chatLog.innerHTML = '';
+  chatErr.textContent = '';
+  await loadChatModels();
+  const existing = await fetch(`/api/chat/${jobId}`).then(r => r.json()).catch(() => ({messages:[]}));
+  for (const m of existing.messages) appendMessage(m.role, m.content);
+}
+
+async function loadChatModels() {
+  try {
+    const r = await fetch('/api/chat/models');
+    const data = await r.json();
+    const current = chatModel.value;
+    chatModel.innerHTML = '';
+    if (!data.models.length) {
+      const opt = document.createElement('option');
+      opt.value = data.default;
+      opt.textContent = `${data.default} (not pulled yet)`;
+      chatModel.appendChild(opt);
+    } else {
+      for (const name of data.models) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        chatModel.appendChild(opt);
+      }
+      const preferred = current || data.models.find(n => n.startsWith(data.default)) || data.models[0];
+      chatModel.value = preferred;
+    }
+  } catch (e) {
+    chatErr.textContent = 'Failed to list Ollama models: ' + e.message;
+  }
+}
+
+function appendMessage(role, content) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  const roleEl = document.createElement('div');
+  roleEl.className = 'role';
+  roleEl.textContent = role;
+  const body = document.createElement('div');
+  body.className = 'body';
+  body.textContent = content;
+  el.appendChild(roleEl);
+  el.appendChild(body);
+  chatLog.appendChild(el);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return el;
+}
+
+async function sendChat(messageOverride) {
+  if (!chatJobId) return;
+  const message = (messageOverride !== undefined ? messageOverride : chatInput.value).trim();
+  if (!message) return;
+  if (messageOverride === undefined) chatInput.value = '';
+  chatErr.textContent = '';
+  appendMessage('user', message);
+
+  const placeholder = appendMessage('assistant', '');
+  const body = placeholder.querySelector('.body');
+  body.classList.add('empty');
+
+  const status = document.createElement('div');
+  status.className = 'gen-status';
+  const model = chatModel.value || '(default)';
+  status.innerHTML = `<span class="spinner"></span><span>Thinking with <code></code></span><span class="elapsed">0.0s</span>`;
+  status.querySelector('code').textContent = model;
+  placeholder.insertBefore(status, body);
+
+  const t0 = performance.now();
+  const elapsedEl = status.querySelector('.elapsed');
+  const timer = setInterval(() => {
+    elapsedEl.textContent = ((performance.now() - t0) / 1000).toFixed(1) + 's';
+  }, 100);
+
+  chatSend.disabled = true;
+  try {
+    const r = await fetch(`/api/chat/${chatJobId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, model: chatModel.value }),
+    });
+    if (!r.ok) {
+      const detail = (await r.json().catch(() => ({}))).detail || await r.text();
+      placeholder.remove();
+      chatErr.textContent = detail;
+      return;
+    }
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let acc = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      acc += dec.decode(value, { stream: true });
+      body.classList.remove('empty');
+      body.textContent = acc;
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    status.remove();
+  } catch (e) {
+    placeholder.remove();
+    chatErr.textContent = e.message;
+  } finally {
+    clearInterval(timer);
+    chatSend.disabled = false;
+    chatInput.focus();
+  }
+}
+
+chatSend.addEventListener('click', sendChat);
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+chatReset.addEventListener('click', async () => {
+  if (!chatJobId) return;
+  await fetch(`/api/chat/${chatJobId}`, { method: 'DELETE' });
+  chatLog.innerHTML = '';
+  chatErr.textContent = '';
+});
+</script>
+</body>
+</html>
