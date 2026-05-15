@@ -48,6 +48,31 @@
     .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
     .col { overflow: visible; }
   }
+
+  /* Right column: summary on top, chat always visible below — each scrolls
+     within its own region instead of the column scrolling as a whole. */
+  .col-summary { overflow: hidden; }
+  .col-summary .summary-panel { flex: 1; }
+  .col-summary .chat { flex: 1.3; }
+  .col-summary .summary-panel,
+  .col-summary .chat,
+  .col-summary .summary-card {
+    min-height: 0; display: flex; flex-direction: column;
+  }
+  .col-summary .summary-card { flex: 1; }
+  .col-summary #summaryView:not([hidden]),
+  .col-summary #chat:not([hidden]) {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+  }
+  .col-summary .summary-body,
+  .col-summary .chat-log { flex: 1; min-height: 0; overflow-y: auto; }
+  .col-summary .panel-header,
+  .col-summary .summary-meta,
+  .col-summary .gen-status,
+  .col-summary .chat h2,
+  .col-summary .chat-input,
+  .col-summary .chat-controls,
+  .col-summary .err { flex: none; }
   h1 { margin: 0 0 0.1em; font-size: 1.6em; }
   .sub { color: var(--muted); margin: 0; font-size: 0.9em; }
 
@@ -209,6 +234,7 @@
     color: var(--muted); font-size: 0.78em;
     margin: 0 0 0.4em;
   }
+  .gen-status[hidden] { display: none; }
   .gen-status code {
     background: rgba(255,255,255,0.05); padding: 0 0.35em;
     border-radius: 3px; font-size: 0.95em;
@@ -612,11 +638,6 @@ function keepSegmentVisible(el) {
   }
 }
 
-function scrollColToBottom(el) {
-  const c = el.closest('.col');
-  if (c) c.scrollTop = c.scrollHeight;
-}
-
 // Timestamps like [HH:MM:SS] or [MM:SS] anywhere in text.
 const TS_RE = /\[(?:\d{1,2}:)?\d{1,2}:\d{2}\]/g;
 
@@ -920,6 +941,7 @@ function appendMessage(role, content) {
   el.appendChild(roleEl);
   el.appendChild(body);
   chatLog.appendChild(el);
+  chatLog.scrollTop = chatLog.scrollHeight;
   return el;
 }
 
@@ -941,7 +963,6 @@ async function sendChat(messageOverride) {
   status.innerHTML = `<span class="spinner"></span><span>Thinking with <code></code></span><span class="elapsed">0.0s</span>`;
   status.querySelector('code').textContent = model;
   placeholder.insertBefore(status, body);
-  scrollColToBottom(chatLog);
 
   const t0 = performance.now();
   const elapsedEl = status.querySelector('.elapsed');
@@ -971,7 +992,7 @@ async function sendChat(messageOverride) {
       acc += dec.decode(value, { stream: true });
       body.classList.remove('empty');
       body.textContent = acc;
-      scrollColToBottom(chatLog);
+      chatLog.scrollTop = chatLog.scrollHeight;
     }
     status.remove();
   } catch (e) {
