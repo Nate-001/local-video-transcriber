@@ -24,16 +24,19 @@
     background: var(--bg);
     color: var(--text);
   }
-  .layout {
+  .workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: 1.8fr 1.1fr 1.1fr;
     gap: 1.5em;
     align-items: start;
+    margin-top: 1em;
   }
-  .sidebar { position: sticky; top: 1em; }
-  @media (max-width: 1000px) {
-    .layout { grid-template-columns: 1fr; }
-    .sidebar { position: static; }
+  .col { min-width: 0; }
+  .col > :first-child { margin-top: 0; }
+  .col-video { position: sticky; top: 1em; }
+  @media (max-width: 1100px) {
+    .workspace { grid-template-columns: 1fr; }
+    .col-video { position: static; }
   }
   h1 { margin: 0 0 0.2em; }
   .sub { color: var(--muted); margin-top: 0; }
@@ -207,7 +210,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.8em 1em;
-    max-height: 30em;
+    max-height: calc(100vh - 10em);
     overflow-y: auto;
     font-size: 0.92em;
     line-height: 1.5;
@@ -266,9 +269,7 @@
 <h1>Local Video Transcriber</h1>
 <p class="sub">faster-whisper + CUDA. Upload a file, pick one already on disk, or paste a YouTube/yt-dlp URL.</p>
 
-<div class="layout">
-<div class="main">
-
+<div class="setup">
 <div class="tabs">
   <button class="tab active" data-source="upload">Upload</button>
   <button class="tab" data-source="path">Local path</button>
@@ -316,33 +317,30 @@
   </label>
   <button id="go">Transcribe</button>
 </div>
+</div><!-- /setup -->
 
-<div id="playerWrap" class="player-wrap" hidden>
-  <video id="player" controls preload="metadata"></video>
-</div>
-
-<div id="panel" class="panel" hidden>
-  <div class="status" id="status">queued</div>
-  <div class="progress"><div id="bar"></div></div>
-  <div class="downloads" id="downloads" hidden></div>
-  <div class="err" id="err"></div>
-</div>
-
-<div id="transcript" class="transcript-panel" hidden>
-  <h2>Transcript</h2>
-  <div class="transcript-body" id="transcriptBody"></div>
-</div>
-
-<details class="library" id="libraryWrap" open>
-  <summary id="librarySummary">Past transcripts</summary>
-  <div class="lib-list" id="libraryList">
-    <div class="lib-empty">loading…</div>
+<div class="workspace">
+<section class="col col-video">
+  <div id="playerWrap" class="player-wrap" hidden>
+    <video id="player" controls preload="metadata"></video>
   </div>
-</details>
 
-</div><!-- /main -->
+  <div id="panel" class="panel" hidden>
+    <div class="status" id="status">queued</div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="downloads" id="downloads" hidden></div>
+    <div class="err" id="err"></div>
+  </div>
+</section>
 
-<aside class="sidebar">
+<section class="col col-transcript">
+  <div id="transcript" class="transcript-panel" hidden>
+    <h2>Transcript</h2>
+    <div class="transcript-body" id="transcriptBody"></div>
+  </div>
+</section>
+
+<aside class="col col-summary">
   <div class="summary-panel">
     <div class="panel-header">
       <h2>Summary</h2>
@@ -384,8 +382,14 @@
     </div>
   </div>
 </aside>
+</div><!-- /workspace -->
 
-</div><!-- /layout -->
+<details class="library" id="libraryWrap" open>
+  <summary id="librarySummary">Past transcripts</summary>
+  <div class="lib-list" id="libraryList">
+    <div class="lib-empty">loading…</div>
+  </div>
+</details>
 
 <script>
 const drop = document.getElementById('drop');
