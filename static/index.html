@@ -40,7 +40,11 @@
     gap: 1.5em;
     flex: 1; min-height: 0;
   }
-  .chatbar { flex: none; height: 13em; display: flex; flex-direction: column; }
+  .chatbar {
+    flex: none; height: 19em; max-height: 42vh;
+    align-self: center; width: 100%; max-width: 820px;
+    display: flex; flex-direction: column;
+  }
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
     min-width: 0; min-height: 0;
