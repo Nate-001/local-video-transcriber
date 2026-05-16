@@ -29,14 +29,18 @@
     overflow: hidden;
   }
   .workspace {
+    display: flex; flex-direction: column;
+    gap: 1.2em; margin-top: 1em;
+    flex: 1; min-height: 0;
+  }
+  .grid {
     display: grid;
-    grid-template-columns: 1.7fr 1fr 1fr 1fr;
+    grid-template-columns: 1.7fr 1.1fr 1.1fr;
     grid-template-rows: minmax(0, 1fr);
     gap: 1.5em;
-    margin-top: 1em;
-    flex: 1;
-    min-height: 0;
+    flex: 1; min-height: 0;
   }
+  .chatbar { flex: none; height: 13em; display: flex; flex-direction: column; }
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
     min-width: 0; min-height: 0;
@@ -45,7 +49,8 @@
   }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
-    .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
+    .grid { grid-template-columns: 1fr; grid-template-rows: none; }
+    .chatbar { height: auto; }
     .col { overflow: visible; }
   }
 
@@ -53,21 +58,20 @@
      only the content region below it. */
   .col-transcript #transcript:not([hidden]),
   .col-summary .summary-panel,
-  .col-chat .chat,
-  .col-chat #chat:not([hidden]) {
+  .chatbar .chat,
+  .chatbar #chat:not([hidden]) {
     flex: 1; min-height: 0; display: flex; flex-direction: column;
   }
   .col-transcript .transcript-body,
   .col-summary #summaryView:not([hidden]),
-  .col-chat .chat-log {
+  .chatbar .chat-log {
     flex: 1; min-height: 0; overflow-y: auto;
   }
   .col-transcript #transcript h2,
   .col-summary .panel-header,
-  .col-chat .chat h2,
-  .col-chat .chat-input,
-  .col-chat .chat-controls,
-  .col-chat .err { flex: none; }
+  .chatbar .chat h2,
+  .chatbar .chat-input,
+  .chatbar .err { flex: none; }
 
   /* Video column scrolls as a whole — on a short window the player, status,
      and library together exceed the column height. */
@@ -260,8 +264,7 @@
   .chat-input { display: flex; gap: 0.5em; margin-top: 0.6em; }
   .chat-input input { flex: 1; min-width: 0; }
   .chat-input button { padding: 0.6em 0.9em; white-space: nowrap; }
-  .chat-controls { display: flex; gap: 0.5em; align-items: end; margin-top: 0.6em; flex-wrap: wrap; }
-  .chat-controls .ghost {
+  .ghost {
     background: transparent; color: var(--muted); border: 1px solid var(--border);
   }
 
@@ -385,6 +388,7 @@
 </details>
 
 <div class="workspace">
+<div class="grid">
 <section class="col col-video">
   <div id="playerWrap" class="player-wrap" hidden>
     <video id="player" controls preload="metadata"></video>
@@ -436,8 +440,9 @@
     </div>
   </div>
 </section>
+</div><!-- /grid -->
 
-<aside class="col col-chat">
+<aside class="chatbar">
   <div class="chat">
     <h2>Ask follow-ups</h2>
     <div id="chatEmpty" class="chat-empty">
@@ -448,12 +453,8 @@
       <div class="chat-input">
         <input id="chatInput" type="text" placeholder="Ask a follow-up…">
         <button id="chatSend">Send</button>
-      </div>
-      <div class="chat-controls">
-        <label>Model
-          <select id="chatModel"><option value="">loading…</option></select>
-        </label>
-        <button id="chatReset" class="ghost">Clear chat</button>
+        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
+        <button id="chatReset" class="ghost">Clear</button>
       </div>
       <div class="err" id="chatErr"></div>
     </div>
