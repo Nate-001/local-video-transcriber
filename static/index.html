@@ -100,7 +100,7 @@
   h2 { font-size: 1.05em; font-weight: 650; margin: 0 0 0.6em; }
 
   details.setup {
-    margin-top: 0.9em; flex: none;
+    flex: none;
     border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel);
   }
@@ -326,59 +326,6 @@
   </div>
 </header>
 
-<details class="setup" id="setupPanel" open>
-<summary>New transcription</summary>
-<div class="setup-body">
-<div class="tabs">
-  <button class="tab active" data-source="upload">Upload</button>
-  <button class="tab" data-source="path">Local path</button>
-  <button class="tab" data-source="url">URL</button>
-</div>
-
-<div class="source active" data-source="upload">
-  <div id="drop" class="drop">
-    <p><strong>Drop a file here</strong> or click to browse</p>
-    <p class="filename" id="filename">No file selected</p>
-    <input id="file" type="file" accept="video/*,audio/*" hidden>
-  </div>
-</div>
-
-<div class="source" data-source="path">
-  <label>Local file path
-    <input id="pathInput" type="text" placeholder="Z:\Videos\example.mp4">
-  </label>
-</div>
-
-<div class="source" data-source="url">
-  <label>Video URL (YouTube, Vimeo, anything yt-dlp supports)
-    <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=...">
-  </label>
-</div>
-
-<div class="row">
-  <label>Model
-    <select id="model">
-      <option value="tiny">tiny (fastest)</option>
-      <option value="base" selected>base</option>
-      <option value="small">small</option>
-      <option value="medium">medium</option>
-      <option value="large-v3">large-v3 (best)</option>
-    </select>
-  </label>
-  <label>Language
-    <input id="language" type="text" placeholder="auto" size="6">
-  </label>
-  <label>Device
-    <select id="device">
-      <option value="cuda" selected>cuda</option>
-      <option value="cpu">cpu</option>
-    </select>
-  </label>
-  <button id="go">Transcribe</button>
-</div>
-</div><!-- /setup-body -->
-</details>
-
 <div class="workspace">
 <section class="col col-video">
   <div id="playerWrap" class="player-wrap" hidden>
@@ -398,11 +345,64 @@
       <div class="lib-empty">loading…</div>
     </div>
   </details>
+
+  <details class="setup" id="setupPanel" open>
+  <summary>New transcription</summary>
+  <div class="setup-body">
+  <div class="tabs">
+    <button class="tab active" data-source="upload">Upload</button>
+    <button class="tab" data-source="path">Local path</button>
+    <button class="tab" data-source="url">URL</button>
+  </div>
+
+  <div class="source active" data-source="upload">
+    <div id="drop" class="drop">
+      <p><strong>Drop a file here</strong> or click to browse</p>
+      <p class="filename" id="filename">No file selected</p>
+      <input id="file" type="file" accept="video/*,audio/*" hidden>
+    </div>
+  </div>
+
+  <div class="source" data-source="path">
+    <label>Local file path
+      <input id="pathInput" type="text" placeholder="Z:\Videos\example.mp4">
+    </label>
+  </div>
+
+  <div class="source" data-source="url">
+    <label>Video URL (YouTube, Vimeo, anything yt-dlp supports)
+      <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=...">
+    </label>
+  </div>
+
+  <div class="row">
+    <label>Model
+      <select id="model">
+        <option value="tiny">tiny (fastest)</option>
+        <option value="base" selected>base</option>
+        <option value="small">small</option>
+        <option value="medium">medium</option>
+        <option value="large-v3">large-v3 (best)</option>
+      </select>
+    </label>
+    <label>Language
+      <input id="language" type="text" placeholder="auto" size="6">
+    </label>
+    <label>Device
+      <select id="device">
+        <option value="cuda" selected>cuda</option>
+        <option value="cpu">cpu</option>
+      </select>
+    </label>
+    <button id="go">Transcribe</button>
+  </div>
+  </div><!-- /setup-body -->
+  </details>
 </section>
 
 <section class="col col-transcript">
   <div id="transcriptEmpty" class="transcript-empty-state">
-    Select a past transcript on the left, or start a new transcription above.
+    Select a past transcript or start a new transcription from the left panel.
   </div>
   <div id="transcript" class="transcript-panel" hidden>
     <h2>Transcript</h2>
