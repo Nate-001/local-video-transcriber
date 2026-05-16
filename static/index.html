@@ -331,6 +331,14 @@
   .lib-item.active { border-color: var(--accent); background: var(--accent-soft); }
   .lib-name { font-weight: 600; font-size: 0.88em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lib-meta { color: var(--muted); font-size: 0.74em; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .lib-actions { display: flex; gap: 0.15em; flex: none; }
+  .lib-act {
+    background: transparent; border: 0; color: var(--muted);
+    cursor: pointer; padding: 0.2em 0.4em; font-size: 0.9em;
+    border-radius: 5px; line-height: 1;
+  }
+  .lib-act:hover { color: var(--text); background: var(--border); filter: none; }
+  .lib-act[data-act="delete"]:hover { color: var(--error); }
   .lib-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 </style>
 </head>
@@ -903,8 +911,31 @@ async function loadLibrary() {
     el.innerHTML = `
       <div class="lib-name">${escapeHtml(j.filename || j.job_id)}</div>
       <div class="lib-meta">${escapeHtml(r.language || '?')} · ${dur} · ${when}</div>
+      <div class="lib-actions">
+        <button class="lib-act" data-act="rename" title="Rename">&#9998;</button>
+        <button class="lib-act" data-act="delete" title="Delete">&#10005;</button>
+      </div>
     `;
-    el.addEventListener('click', () => showJobDone(j.job_id, r));
+    el.addEventListener('click', e => {
+      if (!e.target.closest('.lib-act')) showJobDone(j.job_id, r);
+    });
+    el.querySelector('[data-act="rename"]').addEventListener('click', async e => {
+      e.stopPropagation();
+      const cur = j.filename || j.job_id;
+      const name = (prompt('Rename transcript:', cur) || '').trim();
+      if (!name || name === cur) return;
+      await fetch(`/api/jobs/${j.job_id}/rename`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      loadLibrary();
+    });
+    el.querySelector('[data-act="delete"]').addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm(`Delete "${j.filename || j.job_id}"? Its transcript files will be removed.`)) return;
+      await fetch(`/api/jobs/${j.job_id}`, { method: 'DELETE' });
+      loadLibrary();
+    });
     libraryList.appendChild(el);
   }
 }

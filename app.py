@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import re
+import shutil
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -349,6 +350,36 @@ def list_jobs():
         })
     items.sort(key=lambda x: x["mtime"], reverse=True)
     return {"jobs": items}
+
+
+@app.post("/api/jobs/{job_id}/rename")
+def rename_job(job_id: str, payload: dict = Body(...)):
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "Missing 'name'")
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if not job:
+            raise HTTPException(404, "Unknown job id")
+        job["filename"] = name
+    _save_meta(OUTPUTS_DIR / job_id, title=name)
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/jobs/{job_id}")
+def delete_job(job_id: str):
+    with _jobs_lock:
+        _jobs.pop(job_id, None)
+    with _chats_lock:
+        _chats.pop(job_id, None)
+    shutil.rmtree(OUTPUTS_DIR / job_id, ignore_errors=True)
+    shutil.rmtree(DOWNLOADS_DIR / job_id, ignore_errors=True)
+    for f in UPLOADS_DIR.glob(f"{job_id}_*"):
+        try:
+            f.unlink()
+        except OSError:
+            pass
+    return {"ok": True}
 
 
 def _resolve_media(job_id: str) -> Path | None:
