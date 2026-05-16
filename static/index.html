@@ -89,23 +89,22 @@
   .topbox-half { padding: 0.85em 1em; min-width: 0; }
   .topbox-half:first-child { border-right: 1px solid var(--border); }
 
-  /* Video top-left, chat directly below it (same width); transcript and
-     summary run tall down the right. */
+  /* Three columns; the whole page scrolls. Transcript and summary scroll
+     within themselves so they stay a manageable height. */
   .main {
     margin-top: 0.9em;
     display: grid;
     grid-template-columns: 2.3fr 1fr 1fr;
-    grid-template-rows: 76vh;
     gap: 1.1em;
+    align-items: start;
   }
-  .col-video { grid-column: 1; grid-row: 1; }
-  .col-transcript { grid-column: 2; grid-row: 1; }
-  .col-summary { grid-column: 3; grid-row: 1; }
   .col {
-    min-width: 0; min-height: 0;
+    min-width: 0;
     display: flex; flex-direction: column; gap: 1em;
-    overflow: hidden;
   }
+  .transcript-body { max-height: 72vh; overflow-y: auto; }
+  #summaryView:not([hidden]) { max-height: 72vh; overflow-y: auto; }
+  .col-transcript > h2 { margin: 0; }
   .chatzone {
     padding: 1em 1.2em 1.2em;
     border: 1px solid var(--border); border-radius: var(--radius);
@@ -115,31 +114,9 @@
     height: 42vh; overflow-y: auto; background: var(--panel-2);
   }
   @media (max-width: 1000px) {
-    .main { grid-template-columns: 1fr; grid-template-rows: none; }
-    .col-video, .col-transcript, .col-summary, .chatzone {
-      grid-column: auto; grid-row: auto;
-    }
-    .col { overflow: visible; }
+    .main { grid-template-columns: 1fr; }
     .transcript-body, #summaryView { max-height: 60vh; }
   }
-
-  /* Transcript and summary columns pin their heading and scroll only the
-     content region below it. */
-  .col-transcript #transcript:not([hidden]),
-  .col-summary .summary-panel {
-    flex: 1; min-height: 0; display: flex; flex-direction: column;
-  }
-  .col-transcript .transcript-body,
-  .col-summary #summaryView:not([hidden]) {
-    flex: 1; min-height: 0; overflow-y: auto;
-  }
-  .col-transcript #transcript h2,
-  .col-summary .panel-header { flex: none; }
-
-  /* Video column scrolls as a whole — on a short window the player, status,
-     and library together exceed the column height. */
-  .col-video { overflow-y: auto; }
-  .col-video > :last-child { margin-bottom: 0.2em; }
   h2 { font-size: 1.05em; font-weight: 650; margin: 0 0 0.6em; }
 
   details.setup {
@@ -472,11 +449,11 @@
 </section>
 
 <section class="col col-transcript">
+  <h2>Transcript</h2>
   <div id="transcriptEmpty" class="transcript-empty-state">
     Pick a past transcript, or start a new transcription, to see it here.
   </div>
   <div id="transcript" class="transcript-panel" hidden>
-    <h2>Transcript</h2>
     <div class="transcript-body" id="transcriptBody"></div>
   </div>
 </section>
