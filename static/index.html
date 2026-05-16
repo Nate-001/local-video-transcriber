@@ -51,50 +51,64 @@
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
 
-  .toprow {
-    display: grid; grid-template-columns: 1.4fr 1fr;
-    gap: 1.1em; margin-top: 0.9em; align-items: start;
-  }
-  details.toppanel {
-    min-width: 0;
+  /* New transcription and Past transcripts share one collapsible box,
+     split down the middle. */
+  details.topbox {
+    margin-top: 0.9em;
     border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel);
   }
-  details.toppanel > summary {
+  details.topbox > summary {
     cursor: pointer; list-style: none;
-    padding: 0.65em 0.95em;
+    display: grid; grid-template-columns: 1fr 1fr;
+  }
+  details.topbox > summary::-webkit-details-marker { display: none; }
+  details.topbox > summary > span {
+    padding: 0.65em 1em;
     font-size: 1em; font-weight: 650; color: var(--text);
     display: flex; align-items: center; gap: 0.5em;
   }
-  details.toppanel > summary::-webkit-details-marker { display: none; }
-  details.toppanel > summary::before {
+  details.topbox > summary > span:first-child { border-right: 1px solid var(--border); }
+  details.topbox > summary > span:first-child::before {
     content: "\25B8"; color: var(--accent); font-size: 0.8em;
   }
-  details.toppanel[open] > summary::before { content: "\25BE"; }
-  details.toppanel[open] > summary { border-bottom: 1px solid var(--divider); }
-  .toppanel-body { padding: 0.85em 1em; }
+  details.topbox[open] > summary > span:first-child::before { content: "\25BE"; }
+  details.topbox[open] > summary { border-bottom: 1px solid var(--divider); }
+  .topbox-body { display: grid; grid-template-columns: 1fr 1fr; }
+  .topbox-half { padding: 0.85em 1em; min-width: 0; }
+  .topbox-half:first-child { border-right: 1px solid var(--border); }
 
-  /* Main row: a big video plus separate transcript and summary columns. */
+  /* Video top-left, chat directly below it (same width); transcript and
+     summary run tall down the right. */
   .main {
     margin-top: 0.9em;
-    display: grid; grid-template-columns: 2.3fr 1fr 1fr;
-    gap: 1.1em; height: 80vh;
+    display: grid;
+    grid-template-columns: 2.3fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1.1em;
   }
+  .col-video { grid-column: 1; grid-row: 1; }
+  .col-transcript { grid-column: 2; grid-row: 1 / span 2; }
+  .col-summary { grid-column: 3; grid-row: 1 / span 2; }
   .col {
     min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 1em;
     overflow: hidden;
   }
   .chatzone {
-    margin-top: 1.2em; padding: 1em 1.2em 1.2em;
+    grid-column: 1; grid-row: 2;
+    padding: 1em 1.2em 1.2em;
     border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel);
   }
   .chatzone .chat-log {
-    height: 56vh; overflow-y: auto; background: var(--panel-2);
+    height: 42vh; overflow-y: auto; background: var(--panel-2);
   }
   @media (max-width: 1000px) {
-    .main { grid-template-columns: 1fr; height: auto; }
+    .main { grid-template-columns: 1fr; }
+    .col-video, .col-transcript, .col-summary, .chatzone {
+      grid-column: auto; grid-row: auto;
+    }
     .col { overflow: visible; }
     .transcript-body, #summaryView { max-height: 60vh; }
   }
@@ -347,10 +361,13 @@
   </div>
 </header>
 
-<div class="toprow">
-<details class="toppanel" open>
-<summary>New transcription</summary>
-<div class="toppanel-body">
+<details class="topbox" open>
+<summary>
+  <span>New transcription</span>
+  <span id="librarySummary">Past transcripts</span>
+</summary>
+<div class="topbox-body">
+<div class="topbox-half">
 <div class="tabs">
   <button class="tab active" data-source="upload">Upload</button>
   <button class="tab" data-source="path">Local path</button>
@@ -399,17 +416,14 @@
   <button id="go">Transcribe</button>
 </div>
 </div>
-</details>
 
-<details class="toppanel" id="libraryWrap" open>
-<summary id="librarySummary">Past transcripts</summary>
-<div class="toppanel-body">
+<div class="topbox-half" id="libraryWrap">
 <div class="lib-list" id="libraryList">
   <div class="lib-empty">loading…</div>
 </div>
 </div>
+</div>
 </details>
-</div><!-- /toprow -->
 
 <div class="main">
 <section class="col col-video">
@@ -456,8 +470,6 @@
     </div>
   </div>
 </section>
-</div><!-- /main -->
-
 <section class="chatzone">
   <div class="chat">
     <h2>Ask follow-ups</h2>
@@ -476,6 +488,7 @@
     </div>
   </div>
 </section>
+</div><!-- /main -->
 
 <script>
 const drop = document.getElementById('drop');
