@@ -23,8 +23,7 @@
   * { box-sizing: border-box; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    margin: 0 auto;
-    max-width: 1500px;
+    margin: 0;
     padding: 0.8em 1em 2.5em;
     background: var(--bg);
     color: var(--text);
@@ -52,17 +51,12 @@
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
 
-  /* Main row: video takes 2/3, transcript + summary stacked in the rest. */
+  /* Main row: a big video plus separate transcript and summary columns. */
   .main {
     margin-top: 0.9em;
-    display: grid; grid-template-columns: 2fr 1fr;
+    display: grid; grid-template-columns: 2.3fr 1fr 1fr;
     gap: 1.1em; height: 80vh;
   }
-  .right-stack {
-    display: flex; flex-direction: column; gap: 1.1em;
-    min-width: 0; min-height: 0;
-  }
-  .right-stack > .col { flex: 1; }
   .col {
     min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 1em;
@@ -73,7 +67,6 @@
   @media (max-width: 1000px) {
     .main { grid-template-columns: 1fr; height: auto; }
     .col { overflow: visible; }
-    .right-stack > .col { flex: none; }
     .transcript-body, #summaryView { max-height: 60vh; }
   }
 
@@ -399,7 +392,6 @@
   </details>
 </section>
 
-<div class="right-stack">
 <section class="col col-transcript">
   <div id="transcriptEmpty" class="transcript-empty-state">
     Pick a past transcript, or start a new transcription, to see it here.
@@ -431,7 +423,6 @@
     </div>
   </div>
 </section>
-</div><!-- /right-stack -->
 </div><!-- /main -->
 
 <section class="chatzone">
