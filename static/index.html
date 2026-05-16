@@ -23,9 +23,8 @@
   * { box-sizing: border-box; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    max-width: 1500px;
-    margin: 0 auto;
-    padding: 0.9em 1.4em 1.1em;
+    margin: 0;
+    padding: 0.7em 0.85em 0.9em;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
@@ -58,18 +57,10 @@
 
   .workspace {
     display: grid;
-    grid-template-columns: 1.4fr 1.6fr 1fr;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: 1.2em; margin-top: 0.9em;
+    grid-template-columns: 1.3fr 1.4fr 1.1fr 1.25fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1.1em; margin-top: 0.9em;
     flex: 1; min-height: 0;
-  }
-  .col-video { grid-column: 1; grid-row: 1 / span 2; }
-  .col-transcript { grid-column: 2; grid-row: 1; }
-  .col-summary { grid-column: 3; grid-row: 1; }
-  .chatbar {
-    grid-column: 2 / span 2; grid-row: 2;
-    height: 19em; max-height: 42vh;
-    display: flex; flex-direction: column;
   }
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
@@ -80,10 +71,6 @@
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
     .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
-    .col-video, .col-transcript, .col-summary, .chatbar {
-      grid-column: auto; grid-row: auto;
-    }
-    .chatbar { height: auto; }
     .col { overflow: visible; }
   }
 
@@ -254,8 +241,9 @@
     flex-shrink: 0;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .chat-input { display: flex; gap: 0.5em; margin-top: 0.6em; }
-  .chat-input input { flex: 1; min-width: 0; }
+  .chat-input { display: flex; flex-wrap: wrap; gap: 0.5em; margin-top: 0.6em; }
+  .chat-input input { flex: 1 1 100%; min-width: 0; }
+  .chat-input select { flex: 1; min-width: 0; }
   .chat-input button { padding: 0.55em 0.9em; white-space: nowrap; }
   .ghost {
     background: transparent; color: var(--muted); border: 1px solid var(--border);
@@ -422,6 +410,25 @@
   </div>
 </section>
 
+<aside class="col chatbar">
+  <div class="chat">
+    <h2>Ask follow-ups</h2>
+    <div id="chatEmpty" class="chat-empty">
+      Load a transcript to ask questions about it.
+    </div>
+    <div id="chat" hidden>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-input">
+        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
+        <button id="chatSend">Send</button>
+        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
+        <button id="chatReset" class="ghost">Clear</button>
+      </div>
+      <div class="err" id="chatErr"></div>
+    </div>
+  </div>
+</aside>
+
 <section class="col col-summary">
   <div class="summary-panel">
     <div class="panel-header">
@@ -443,25 +450,6 @@
     </div>
   </div>
 </section>
-
-<aside class="chatbar">
-  <div class="chat">
-    <h2>Ask follow-ups</h2>
-    <div id="chatEmpty" class="chat-empty">
-      Load a transcript to ask questions about it.
-    </div>
-    <div id="chat" hidden>
-      <div class="chat-log" id="chatLog"></div>
-      <div class="chat-input">
-        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
-        <button id="chatSend">Send</button>
-        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
-        <button id="chatReset" class="ghost">Clear</button>
-      </div>
-      <div class="err" id="chatErr"></div>
-    </div>
-  </div>
-</aside>
 </div><!-- /workspace -->
 
 <script>
