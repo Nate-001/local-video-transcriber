@@ -75,13 +75,11 @@
   .page-watch.active {
     display: flex; flex-direction: column; gap: 1em;
   }
-  .page-insights.active {
-    display: grid; grid-template-columns: 1.2fr 1fr;
-    grid-template-rows: minmax(0, 1fr); gap: 1.1em;
-  }
+  .page-chat.active { display: flex; justify-content: center; }
+  .page-chat .chatbar { width: 100%; max-width: 1100px; }
   .watch-main {
     flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1.6fr 1fr;
+    display: grid; grid-template-columns: 1.6fr 1.2fr 1fr;
     grid-template-rows: minmax(0, 1fr); gap: 1.1em;
   }
   .page-watch > details.setup,
@@ -94,7 +92,6 @@
   }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
-    .page-insights.active { grid-template-columns: 1fr; grid-template-rows: none; }
     .watch-main { grid-template-columns: 1fr; grid-template-rows: none; }
     .col { overflow: visible; }
   }
@@ -353,7 +350,7 @@
   </div>
   <nav class="viewtabs">
     <button class="viewtab active" data-view="watch">Watch</button>
-    <button class="viewtab" data-view="insights">Insights</button>
+    <button class="viewtab" data-view="chat">Chat</button>
   </nav>
 </header>
 
@@ -436,17 +433,7 @@
     <div class="transcript-body" id="transcriptBody"></div>
   </div>
 </section>
-</div><!-- /watch-main -->
 
-<details class="library" id="libraryWrap" open>
-  <summary id="librarySummary">Past transcripts</summary>
-  <div class="lib-list" id="libraryList">
-    <div class="lib-empty">loading…</div>
-  </div>
-</details>
-</div><!-- /page-watch -->
-
-<div class="page page-insights" data-view="insights">
 <section class="col col-summary">
   <div class="summary-panel">
     <div class="panel-header">
@@ -468,7 +455,17 @@
     </div>
   </div>
 </section>
+</div><!-- /watch-main -->
 
+<details class="library" id="libraryWrap" open>
+  <summary id="librarySummary">Past transcripts</summary>
+  <div class="lib-list" id="libraryList">
+    <div class="lib-empty">loading…</div>
+  </div>
+</details>
+</div><!-- /page-watch -->
+
+<div class="page page-chat" data-view="chat">
 <aside class="col chatbar">
   <div class="chat">
     <h2>Ask follow-ups</h2>
@@ -487,7 +484,7 @@
     </div>
   </div>
 </aside>
-</div><!-- /page-insights -->
+</div><!-- /page-chat -->
 </div><!-- /main -->
 
 <script>
