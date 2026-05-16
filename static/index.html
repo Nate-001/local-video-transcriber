@@ -86,10 +86,20 @@
   details.setup > summary {
     cursor: pointer; padding: 0.6em 0.9em; list-style: none;
     color: var(--text); font-weight: 600; font-size: 0.9em;
+    display: flex; align-items: center; gap: 0.5em;
   }
   details.setup > summary::-webkit-details-marker { display: none; }
-  details.setup > summary::before { content: "\25B8  "; color: var(--accent); }
-  details.setup[open] > summary::before { content: "\25BE  "; color: var(--accent); }
+  details.setup > summary::before { content: "\25B8"; color: var(--accent); }
+  details.setup[open] > summary::before { content: "\25BE"; color: var(--accent); }
+  details.setup > summary::after {
+    content: "Show"; margin-left: auto;
+    padding: 0.25em 0.7em; border: 1px solid var(--border);
+    border-radius: 5px; font-size: 0.82em; color: var(--muted);
+  }
+  details.setup[open] > summary::after { content: "Hide"; }
+  details.setup > summary:hover::after {
+    border-color: var(--accent); color: var(--text);
+  }
   details.setup[open] > summary { border-bottom: 1px solid var(--border); }
   .setup-body { padding: 0.1em 0.9em 0.8em; }
 
@@ -248,7 +258,8 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .chat-input { display: flex; gap: 0.5em; margin-top: 0.6em; }
-  .chat-input input { flex: 1; }
+  .chat-input input { flex: 1; min-width: 0; }
+  .chat-input button { padding: 0.6em 0.9em; white-space: nowrap; }
   .chat-controls { display: flex; gap: 0.5em; align-items: end; margin-top: 0.6em; flex-wrap: wrap; }
   .chat-controls .ghost {
     background: transparent; color: var(--muted); border: 1px solid var(--border);
