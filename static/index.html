@@ -69,23 +69,23 @@
   .viewtab:hover { color: var(--text); filter: none; }
   .viewtab.active { background: var(--accent); color: #fff; }
 
-  .main {
-    display: flex; gap: 1.1em; margin-top: 0.8em;
-    flex: 1; min-height: 0;
-  }
-  .sidebar {
-    flex: none; width: 250px;
-    display: flex; flex-direction: column; gap: 1em;
-    overflow-y: auto;
-  }
-  .content { flex: 1; min-width: 0; min-height: 0; }
+  .main { margin-top: 0.8em; flex: 1; min-height: 0; }
   .page { height: 100%; }
   .page:not(.active) { display: none; }
-  .page.active {
-    display: grid; grid-template-rows: minmax(0, 1fr); gap: 1.1em;
+  .page-watch.active {
+    display: flex; flex-direction: column; gap: 1em;
   }
-  .page-watch.active { grid-template-columns: 1.55fr 1fr; }
-  .page-insights.active { grid-template-columns: 1.2fr 1fr; }
+  .page-insights.active {
+    display: grid; grid-template-columns: 1.2fr 1fr;
+    grid-template-rows: minmax(0, 1fr); gap: 1.1em;
+  }
+  .watch-main {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 1.6fr 1fr;
+    grid-template-rows: minmax(0, 1fr); gap: 1.1em;
+  }
+  .page-watch > details.setup,
+  .page-watch > details.library { flex: none; }
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
     min-width: 0; min-height: 0;
@@ -94,9 +94,8 @@
   }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
-    .main { flex-direction: column; }
-    .sidebar { width: auto; overflow: visible; }
-    .page.active { grid-template-columns: 1fr; grid-template-rows: none; }
+    .page-insights.active { grid-template-columns: 1fr; grid-template-rows: none; }
+    .watch-main { grid-template-columns: 1fr; grid-template-rows: none; }
     .col { overflow: visible; }
   }
 
@@ -324,9 +323,11 @@
   }
   details.library summary:hover { color: var(--text); }
   .lib-list {
-    margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;
+    margin-top: 0.5em; display: flex; gap: 0.5em;
+    overflow-x: auto; padding-bottom: 0.15em;
   }
   .lib-item {
+    flex: 0 0 13em;
     display: flex; flex-direction: column; gap: 0.15em;
     padding: 0.5em 0.7em; border: 1px solid var(--border); border-radius: 8px;
     background: var(--panel); cursor: pointer;
@@ -357,70 +358,62 @@
 </header>
 
 <div class="main">
-<aside class="sidebar">
-  <details class="library" id="libraryWrap" open>
-    <summary id="librarySummary">Past transcripts</summary>
-    <div class="lib-list" id="libraryList">
-      <div class="lib-empty">loading…</div>
-    </div>
-  </details>
-
-  <details class="setup" id="setupPanel" open>
-  <summary>New transcription</summary>
-  <div class="setup-body">
-  <div class="tabs">
-    <button class="tab active" data-source="upload">Upload</button>
-    <button class="tab" data-source="path">Local path</button>
-    <button class="tab" data-source="url">URL</button>
-  </div>
-
-  <div class="source active" data-source="upload">
-    <div id="drop" class="drop">
-      <p><strong>Drop a file here</strong> or click to browse</p>
-      <p class="filename" id="filename">No file selected</p>
-      <input id="file" type="file" accept="video/*,audio/*" hidden>
-    </div>
-  </div>
-
-  <div class="source" data-source="path">
-    <label>Local file path
-      <input id="pathInput" type="text" placeholder="Z:\Videos\example.mp4">
-    </label>
-  </div>
-
-  <div class="source" data-source="url">
-    <label>Video URL (YouTube, Vimeo, anything yt-dlp supports)
-      <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=...">
-    </label>
-  </div>
-
-  <div class="row">
-    <label>Model
-      <select id="model">
-        <option value="tiny">tiny (fastest)</option>
-        <option value="base" selected>base</option>
-        <option value="small">small</option>
-        <option value="medium">medium</option>
-        <option value="large-v3">large-v3 (best)</option>
-      </select>
-    </label>
-    <label>Language
-      <input id="language" type="text" placeholder="auto" size="6">
-    </label>
-    <label>Device
-      <select id="device">
-        <option value="cuda" selected>cuda</option>
-        <option value="cpu">cpu</option>
-      </select>
-    </label>
-    <button id="go">Transcribe</button>
-  </div>
-  </div><!-- /setup-body -->
-  </details>
-</aside>
-
-<div class="content">
 <div class="page page-watch active" data-view="watch">
+
+<details class="setup" id="setupPanel" open>
+<summary>New transcription</summary>
+<div class="setup-body">
+<div class="tabs">
+  <button class="tab active" data-source="upload">Upload</button>
+  <button class="tab" data-source="path">Local path</button>
+  <button class="tab" data-source="url">URL</button>
+</div>
+
+<div class="source active" data-source="upload">
+  <div id="drop" class="drop">
+    <p><strong>Drop a file here</strong> or click to browse</p>
+    <p class="filename" id="filename">No file selected</p>
+    <input id="file" type="file" accept="video/*,audio/*" hidden>
+  </div>
+</div>
+
+<div class="source" data-source="path">
+  <label>Local file path
+    <input id="pathInput" type="text" placeholder="Z:\Videos\example.mp4">
+  </label>
+</div>
+
+<div class="source" data-source="url">
+  <label>Video URL (YouTube, Vimeo, anything yt-dlp supports)
+    <input id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=...">
+  </label>
+</div>
+
+<div class="row">
+  <label>Model
+    <select id="model">
+      <option value="tiny">tiny (fastest)</option>
+      <option value="base" selected>base</option>
+      <option value="small">small</option>
+      <option value="medium">medium</option>
+      <option value="large-v3">large-v3 (best)</option>
+    </select>
+  </label>
+  <label>Language
+    <input id="language" type="text" placeholder="auto" size="6">
+  </label>
+  <label>Device
+    <select id="device">
+      <option value="cuda" selected>cuda</option>
+      <option value="cpu">cpu</option>
+    </select>
+  </label>
+  <button id="go">Transcribe</button>
+</div>
+</div><!-- /setup-body -->
+</details>
+
+<div class="watch-main">
 <section class="col col-video">
   <div id="playerWrap" class="player-wrap" hidden>
     <video id="player" controls preload="metadata"></video>
@@ -436,13 +429,21 @@
 
 <section class="col col-transcript">
   <div id="transcriptEmpty" class="transcript-empty-state">
-    Select a past transcript or start a new transcription from the left panel.
+    Select a past transcript below, or start a new transcription above.
   </div>
   <div id="transcript" class="transcript-panel" hidden>
     <h2>Transcript</h2>
     <div class="transcript-body" id="transcriptBody"></div>
   </div>
 </section>
+</div><!-- /watch-main -->
+
+<details class="library" id="libraryWrap" open>
+  <summary id="librarySummary">Past transcripts</summary>
+  <div class="lib-list" id="libraryList">
+    <div class="lib-empty">loading…</div>
+  </div>
+</details>
 </div><!-- /page-watch -->
 
 <div class="page page-insights" data-view="insights">
@@ -487,7 +488,6 @@
   </div>
 </aside>
 </div><!-- /page-insights -->
-</div><!-- /content -->
 </div><!-- /main -->
 
 <script>
