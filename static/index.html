@@ -222,7 +222,7 @@
   .summary-panel { margin: 0; }
   .summary-panel .panel-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin: 0 0 0.6em;
+    margin: 0 0 1em;
   }
   .summary-panel h2 { margin: 0; }
   .summary-card {
@@ -241,6 +241,12 @@
     background: var(--panel); border: 1px dashed var(--border);
     border-radius: var(--radius); padding: 1.6em 1em;
     text-align: center; color: var(--muted); font-size: 0.88em;
+  }
+  /* Fill the column so the transcript and summary empty states match. */
+  .transcript-empty-state:not([hidden]),
+  .summary-empty:not([hidden]) {
+    flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
   }
   .mini { padding: 0.35em 0.7em; font-size: 0.8em; }
 
