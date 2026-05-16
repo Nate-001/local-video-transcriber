@@ -50,6 +50,17 @@
   }
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
+  .gh-star {
+    margin-left: auto; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 0.4em;
+    padding: 0.45em 0.85em;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: var(--panel-2); color: var(--text);
+    text-decoration: none; font-size: 0.85em; font-weight: 600;
+    transition: border-color 0.12s;
+  }
+  .gh-star:hover { border-color: var(--accent); }
+  .gh-star svg { color: #f0b400; }
 
   /* New transcription and Past transcripts share one collapsible box,
      split down the middle. */
@@ -84,7 +95,7 @@
     margin-top: 0.9em;
     display: grid;
     grid-template-columns: 2.3fr 1fr 1fr;
-    grid-template-rows: 76vh auto;
+    grid-template-rows: 76vh;
     gap: 1.1em;
   }
   .col-video { grid-column: 1; grid-row: 1; }
@@ -96,7 +107,6 @@
     overflow: hidden;
   }
   .chatzone {
-    grid-column: 1; grid-row: 2;
     padding: 1em 1.2em 1.2em;
     border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel);
@@ -244,7 +254,7 @@
     border-radius: var(--radius); padding: 1.6em 1em;
     text-align: center; color: var(--muted); font-size: 0.88em;
   }
-  .ghost.mini { padding: 0.35em 0.7em; font-size: 0.8em; }
+  .mini { padding: 0.35em 0.7em; font-size: 0.8em; }
 
   .chat { margin: 0; }
   .chat-log {
@@ -358,6 +368,10 @@
     <h1>Local Video Transcriber</h1>
     <p class="sub">faster-whisper + CUDA · upload, pick a local file, or paste a URL</p>
   </div>
+  <a class="gh-star" href="https://github.com/Nate-001/local-video-transcriber" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    Star on GitHub
+  </a>
 </header>
 
 <details class="topbox" id="topBox" open>
@@ -436,6 +450,25 @@
     <div class="downloads" id="downloads" hidden></div>
     <div class="err" id="err"></div>
   </div>
+
+  <section class="chatzone">
+    <div class="chat">
+      <h2>Ask follow-ups</h2>
+      <div id="chatEmpty" class="chat-empty">
+        Load a transcript to ask questions about it.
+      </div>
+      <div id="chat" hidden>
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input">
+          <input id="chatInput" type="text" placeholder="Ask a follow-up…">
+          <button id="chatSend">Send</button>
+          <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
+          <button id="chatReset" class="ghost">Clear</button>
+        </div>
+        <div class="err" id="chatErr"></div>
+      </div>
+    </div>
+  </section>
 </section>
 
 <section class="col col-transcript">
@@ -452,7 +485,7 @@
   <div class="summary-panel">
     <div class="panel-header">
       <h2>Summary</h2>
-      <button id="summaryRegen" class="ghost mini" hidden>Regenerate</button>
+      <button id="summaryRegen" class="mini" hidden>Regenerate</button>
     </div>
     <div id="summaryEmpty" class="summary-empty">
       Transcribe or load a past transcript to see a summary.
@@ -466,24 +499,6 @@
         <span class="spinner"></span><span>Generating summary with <code id="summaryStatusModel"></code></span><span class="elapsed" id="summaryElapsed">0.0s</span>
       </div>
       <div class="err" id="summaryErr"></div>
-    </div>
-  </div>
-</section>
-<section class="chatzone">
-  <div class="chat">
-    <h2>Ask follow-ups</h2>
-    <div id="chatEmpty" class="chat-empty">
-      Load a transcript to ask questions about it.
-    </div>
-    <div id="chat" hidden>
-      <div class="chat-log" id="chatLog"></div>
-      <div class="chat-input">
-        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
-        <button id="chatSend">Send</button>
-        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
-        <button id="chatReset" class="ghost">Clear</button>
-      </div>
-      <div class="err" id="chatErr"></div>
     </div>
   </div>
 </section>
