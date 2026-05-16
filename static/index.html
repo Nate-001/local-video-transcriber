@@ -23,14 +23,11 @@
   * { box-sizing: border-box; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 0.7em 0.85em 0.9em;
+    margin: 0 auto;
+    max-width: 1500px;
+    padding: 0.8em 1em 2.5em;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
   }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb {
@@ -55,65 +52,43 @@
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
 
-  .viewtabs {
-    margin-left: auto; display: flex; gap: 0.25em;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 9px; padding: 0.22em;
+  /* Main row: video takes 2/3, transcript + summary stacked in the rest. */
+  .main {
+    margin-top: 0.9em;
+    display: grid; grid-template-columns: 2fr 1fr;
+    gap: 1.1em; height: 80vh;
   }
-  .viewtab {
-    padding: 0.4em 1.15em; border-radius: 7px; border: 0;
-    background: transparent; color: var(--muted);
-    font: inherit; font-size: 0.86em; font-weight: 600; cursor: pointer;
-    transition: background 0.12s, color 0.12s;
+  .right-stack {
+    display: flex; flex-direction: column; gap: 1.1em;
+    min-width: 0; min-height: 0;
   }
-  .viewtab:hover { color: var(--text); filter: none; }
-  .viewtab.active { background: var(--accent); color: #fff; }
-
-  .main { margin-top: 0.8em; flex: 1; min-height: 0; }
-  .page { height: 100%; }
-  .page:not(.active) { display: none; }
-  .page-watch.active {
-    display: flex; flex-direction: column; gap: 1em;
-  }
-  .page-chat.active { display: flex; justify-content: center; }
-  .page-chat .chatbar { width: 100%; max-width: 1100px; }
-  .watch-main {
-    flex: 1; min-height: 0;
-    display: grid; grid-template-columns: 1.6fr 1.2fr 1fr;
-    grid-template-rows: minmax(0, 1fr); gap: 1.1em;
-  }
-  .page-watch > details.setup,
-  .page-watch > details.library { flex: none; }
-  /* Each column scrolls on its own so the page itself never scrolls. */
+  .right-stack > .col { flex: 1; }
   .col {
     min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 1em;
     overflow: hidden;
   }
-  @media (max-width: 1100px) {
-    body { height: auto; overflow: visible; }
-    .watch-main { grid-template-columns: 1fr; grid-template-rows: none; }
+  .chatzone { margin-top: 1.2em; }
+  .chatzone .chat-log { height: 58vh; overflow-y: auto; }
+  @media (max-width: 1000px) {
+    .main { grid-template-columns: 1fr; height: auto; }
     .col { overflow: visible; }
+    .right-stack > .col { flex: none; }
+    .transcript-body, #summaryView { max-height: 60vh; }
   }
 
-  /* Transcript / summary / chat columns each pin their heading and scroll
-     only the content region below it. */
+  /* Transcript and summary columns pin their heading and scroll only the
+     content region below it. */
   .col-transcript #transcript:not([hidden]),
-  .col-summary .summary-panel,
-  .chatbar .chat,
-  .chatbar #chat:not([hidden]) {
+  .col-summary .summary-panel {
     flex: 1; min-height: 0; display: flex; flex-direction: column;
   }
   .col-transcript .transcript-body,
-  .col-summary #summaryView:not([hidden]),
-  .chatbar .chat-log {
+  .col-summary #summaryView:not([hidden]) {
     flex: 1; min-height: 0; overflow-y: auto;
   }
   .col-transcript #transcript h2,
-  .col-summary .panel-header,
-  .chatbar .chat h2,
-  .chatbar .chat-input,
-  .chatbar .err { flex: none; }
+  .col-summary .panel-header { flex: none; }
 
   /* Video column scrolls as a whole — on a short window the player, status,
      and library together exceed the column height. */
@@ -348,14 +323,7 @@
     <h1>Local Video Transcriber</h1>
     <p class="sub">faster-whisper + CUDA · upload, pick a local file, or paste a URL</p>
   </div>
-  <nav class="viewtabs">
-    <button class="viewtab active" data-view="watch">Watch</button>
-    <button class="viewtab" data-view="chat">Chat</button>
-  </nav>
 </header>
-
-<div class="main">
-<div class="page page-watch active" data-view="watch">
 
 <details class="setup" id="setupPanel" open>
 <summary>New transcription</summary>
@@ -410,7 +378,7 @@
 </div><!-- /setup-body -->
 </details>
 
-<div class="watch-main">
+<div class="main">
 <section class="col col-video">
   <div id="playerWrap" class="player-wrap" hidden>
     <video id="player" controls preload="metadata"></video>
@@ -422,11 +390,19 @@
     <div class="downloads" id="downloads" hidden></div>
     <div class="err" id="err"></div>
   </div>
+
+  <details class="library" id="libraryWrap" open>
+    <summary id="librarySummary">Past transcripts</summary>
+    <div class="lib-list" id="libraryList">
+      <div class="lib-empty">loading…</div>
+    </div>
+  </details>
 </section>
 
+<div class="right-stack">
 <section class="col col-transcript">
   <div id="transcriptEmpty" class="transcript-empty-state">
-    Select a past transcript below, or start a new transcription above.
+    Pick a past transcript, or start a new transcription, to see it here.
   </div>
   <div id="transcript" class="transcript-panel" hidden>
     <h2>Transcript</h2>
@@ -455,18 +431,10 @@
     </div>
   </div>
 </section>
-</div><!-- /watch-main -->
+</div><!-- /right-stack -->
+</div><!-- /main -->
 
-<details class="library" id="libraryWrap" open>
-  <summary id="librarySummary">Past transcripts</summary>
-  <div class="lib-list" id="libraryList">
-    <div class="lib-empty">loading…</div>
-  </div>
-</details>
-</div><!-- /page-watch -->
-
-<div class="page page-chat" data-view="chat">
-<aside class="col chatbar">
+<section class="chatzone">
   <div class="chat">
     <h2>Ask follow-ups</h2>
     <div id="chatEmpty" class="chat-empty">
@@ -483,9 +451,7 @@
       <div class="err" id="chatErr"></div>
     </div>
   </div>
-</aside>
-</div><!-- /page-chat -->
-</div><!-- /main -->
+</section>
 
 <script>
 const drop = document.getElementById('drop');
@@ -509,15 +475,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.source').forEach(s => s.classList.toggle('active', s.dataset.source === activeSource));
   });
-});
-
-// Watch / Insights page switcher.
-function setView(v) {
-  document.querySelectorAll('.viewtab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
-  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.dataset.view === v));
-}
-document.querySelectorAll('.viewtab').forEach(t => {
-  t.addEventListener('click', () => setView(t.dataset.view));
 });
 
 drop.addEventListener('click', () => fileInput.click());
@@ -608,9 +565,8 @@ async function poll(jobId) {
 }
 
 async function showJobDone(jobId, r) {
-  // Collapse the setup panel and jump to the Watch page.
+  // Collapse the setup panel once a transcript is shown.
   document.getElementById('setupPanel').open = false;
-  setView('watch');
   panel.hidden = false;
   errEl.textContent = '';
   bar.style.width = '100%';
@@ -699,7 +655,6 @@ function tsToSeconds(label) {
 
 function seekTo(seconds) {
   if (!player.src) return;
-  setView('watch');
   player.currentTime = seconds;
   player.play().catch(() => {});
   player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
