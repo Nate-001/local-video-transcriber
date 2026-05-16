@@ -331,20 +331,19 @@
   }
   details.library summary:hover { color: var(--text); }
   .lib-list {
-    margin-top: 0.5em; display: flex; gap: 0.5em;
-    overflow-x: auto; padding-bottom: 0.15em;
+    margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.4em;
+    max-height: 16em; overflow-y: auto;
   }
   .lib-item {
-    flex: 0 0 13em;
-    display: flex; flex-direction: column; gap: 0.15em;
-    padding: 0.5em 0.7em; border: 1px solid var(--border); border-radius: 8px;
+    display: flex; justify-content: space-between; align-items: center; gap: 0.8em;
+    padding: 0.55em 0.75em; border: 1px solid var(--border); border-radius: 8px;
     background: var(--panel); cursor: pointer;
     transition: border-color 0.12s, background 0.12s;
   }
   .lib-item:hover { border-color: var(--accent); background: var(--panel-2); }
   .lib-item.active { border-color: var(--accent); background: var(--accent-soft); }
-  .lib-name { font-weight: 600; font-size: 0.88em; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lib-meta { color: var(--muted); font-size: 0.72em; font-family: ui-monospace, monospace; }
+  .lib-name { font-weight: 600; font-size: 0.88em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-meta { color: var(--muted); font-size: 0.74em; font-family: ui-monospace, monospace; white-space: nowrap; }
   .lib-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 </style>
 </head>
