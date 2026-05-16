@@ -51,6 +51,20 @@
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
 
+  .toptabs {
+    display: flex; gap: 0.3em; margin-top: 0.9em;
+    border-bottom: 1px solid var(--border);
+  }
+  .toptab {
+    padding: 0.5em 1.05em; border: 0; background: transparent;
+    color: var(--muted); font: inherit; font-size: 0.9em; font-weight: 600;
+    cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .toptab:hover { color: var(--text); filter: none; }
+  .toptab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .toppage { display: none; padding: 0.95em 0 0.3em; }
+  .toppage.active { display: block; }
+
   /* Main row: a big video plus separate transcript and summary columns. */
   .main {
     margin-top: 0.9em;
@@ -318,9 +332,12 @@
   </div>
 </header>
 
-<details class="setup" id="setupPanel" open>
-<summary>New transcription</summary>
-<div class="setup-body">
+<div class="toptabs">
+  <button class="toptab active" data-top="new">New transcription</button>
+  <button class="toptab" data-top="past" id="librarySummary">Past transcripts</button>
+</div>
+
+<div class="toppage active" data-top="new">
 <div class="tabs">
   <button class="tab active" data-source="upload">Upload</button>
   <button class="tab" data-source="path">Local path</button>
@@ -368,8 +385,13 @@
   </label>
   <button id="go">Transcribe</button>
 </div>
-</div><!-- /setup-body -->
-</details>
+</div><!-- /toppage new -->
+
+<div class="toppage" data-top="past" id="libraryWrap">
+  <div class="lib-list" id="libraryList">
+    <div class="lib-empty">loading…</div>
+  </div>
+</div>
 
 <div class="main">
 <section class="col col-video">
@@ -383,13 +405,6 @@
     <div class="downloads" id="downloads" hidden></div>
     <div class="err" id="err"></div>
   </div>
-
-  <details class="library" id="libraryWrap" open>
-    <summary id="librarySummary">Past transcripts</summary>
-    <div class="lib-list" id="libraryList">
-      <div class="lib-empty">loading…</div>
-    </div>
-  </details>
 </section>
 
 <section class="col col-transcript">
@@ -465,6 +480,15 @@ document.querySelectorAll('.tab').forEach(tab => {
     activeSource = tab.dataset.source;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.source').forEach(s => s.classList.toggle('active', s.dataset.source === activeSource));
+  });
+});
+
+// New / Past top-tab switcher.
+document.querySelectorAll('.toptab').forEach(t => {
+  t.addEventListener('click', () => {
+    const v = t.dataset.top;
+    document.querySelectorAll('.toptab').forEach(x => x.classList.toggle('active', x.dataset.top === v));
+    document.querySelectorAll('.toppage').forEach(p => p.classList.toggle('active', p.dataset.top === v));
   });
 });
 
@@ -556,8 +580,6 @@ async function poll(jobId) {
 }
 
 async function showJobDone(jobId, r) {
-  // Collapse the setup panel once a transcript is shown.
-  document.getElementById('setupPanel').open = false;
   panel.hidden = false;
   errEl.textContent = '';
   bar.style.width = '100%';
