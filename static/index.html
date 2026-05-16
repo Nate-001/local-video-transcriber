@@ -6,21 +6,26 @@
 <title>Local Video Transcriber</title>
 <style>
   :root {
-    color-scheme: dark light;
-    --bg: #16181d;
-    --panel: #1e2128;
-    --border: #2c313c;
-    --muted: #8a93a3;
-    --text: #e6e9ef;
-    --accent: #4a9eff;
-    --error: #ff6464;
+    color-scheme: dark;
+    --bg: #0f1116;
+    --panel: #181b22;
+    --panel-2: #21252e;
+    --border: #2a2f3a;
+    --divider: #232830;
+    --muted: #99a2b2;
+    --text: #e8eaf0;
+    --accent: #5a9ef6;
+    --accent-soft: rgba(90,158,246,0.13);
+    --error: #ff6b6b;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 20px rgba(0,0,0,0.22);
   }
   * { box-sizing: border-box; }
   body {
-    font-family: system-ui, -apple-system, sans-serif;
-    max-width: 1400px;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 1em 1.2em;
+    padding: 0.9em 1.4em 1.1em;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
@@ -28,11 +33,34 @@
     flex-direction: column;
     overflow: hidden;
   }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb {
+    background: #313742; border-radius: 6px;
+    border: 2px solid transparent; background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #3c4350; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .topbar {
+    flex: none;
+    display: flex; align-items: center; gap: 0.7em;
+    padding-bottom: 0.8em;
+    border-bottom: 1px solid var(--divider);
+  }
+  .brand-icon {
+    width: 34px; height: 34px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent);
+    border-radius: 9px;
+  }
+  .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
+
   .workspace {
     display: grid;
-    grid-template-columns: 1.7fr 1.1fr 1.1fr;
+    grid-template-columns: 1.4fr 1.6fr 1fr;
     grid-template-rows: minmax(0, 1fr) auto;
-    gap: 1.5em; margin-top: 1em;
+    gap: 1.2em; margin-top: 0.9em;
     flex: 1; min-height: 0;
   }
   .col-video { grid-column: 1; grid-row: 1 / span 2; }
@@ -46,7 +74,7 @@
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
     min-width: 0; min-height: 0;
-    display: flex; flex-direction: column; gap: 1.2em;
+    display: flex; flex-direction: column; gap: 1em;
     overflow: hidden;
   }
   @media (max-width: 1100px) {
@@ -82,181 +110,141 @@
      and library together exceed the column height. */
   .col-video { overflow-y: auto; }
   .col-video > :last-child { margin-bottom: 0.2em; }
-  h1 { margin: 0 0 0.1em; font-size: 1.6em; }
-  .sub { color: var(--muted); margin: 0; font-size: 0.9em; }
+  h2 { font-size: 1.05em; font-weight: 650; margin: 0 0 0.6em; }
 
   details.setup {
-    margin-top: 1em;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    margin-top: 0.9em; flex: none;
+    border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel);
-    flex: none;
   }
   details.setup > summary {
-    cursor: pointer; padding: 0.6em 0.9em; list-style: none;
-    color: var(--text); font-weight: 600; font-size: 0.9em;
+    cursor: pointer; padding: 0.7em 0.95em; list-style: none;
+    color: var(--text); font-weight: 600; font-size: 0.88em;
     display: flex; align-items: center; gap: 0.5em;
   }
   details.setup > summary::-webkit-details-marker { display: none; }
-  details.setup > summary::before { content: "\25B8"; color: var(--accent); }
-  details.setup[open] > summary::before { content: "\25BE"; color: var(--accent); }
+  details.setup > summary::before { content: "\25B8"; color: var(--accent); font-size: 0.85em; }
+  details.setup[open] > summary::before { content: "\25BE"; }
   details.setup > summary::after {
     content: "Show"; margin-left: auto;
-    padding: 0.25em 0.7em; border: 1px solid var(--border);
-    border-radius: 5px; font-size: 0.82em; color: var(--muted);
+    padding: 0.3em 0.75em; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 0.8em; color: var(--muted);
+    transition: border-color 0.12s, color 0.12s;
   }
   details.setup[open] > summary::after { content: "Hide"; }
   details.setup > summary:hover::after {
     border-color: var(--accent); color: var(--text);
   }
-  details.setup[open] > summary { border-bottom: 1px solid var(--border); }
-  .setup-body { padding: 0.1em 0.9em 0.8em; }
+  details.setup[open] > summary { border-bottom: 1px solid var(--divider); }
+  .setup-body { padding: 0.5em 0.95em 0.9em; }
 
-  .tabs { display: flex; gap: 0.4em; margin: 0.6em 0 0.8em; }
+  .tabs { display: flex; gap: 0.4em; margin: 0.5em 0 0.8em; }
   .tab {
-    flex: 1;
-    padding: 0.6em 1em;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--muted);
-    cursor: pointer;
-    font: inherit;
-    text-align: center;
+    flex: 1; padding: 0.55em 1em;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--muted);
+    cursor: pointer; font: inherit; font-size: 0.9em; text-align: center;
+    transition: color 0.12s, border-color 0.12s;
   }
-  .tab.active { color: var(--text); border-color: var(--accent); background: rgba(74,158,255,0.08); }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 
   .source { display: none; }
   .source.active { display: block; }
 
   .drop {
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 1.1em 1em;
-    text-align: center;
-    cursor: pointer;
+    border: 1.5px dashed var(--border); border-radius: var(--radius);
+    padding: 1.3em 1em; text-align: center; cursor: pointer;
+    background: var(--panel-2);
     transition: background 0.15s, border-color 0.15s;
-    background: var(--panel);
   }
-  .drop.over {
-    border-color: var(--accent);
-    background: rgba(74, 158, 255, 0.08);
-  }
-  .drop p { margin: 0.4em 0; }
-  .filename { color: var(--muted); font-family: ui-monospace, monospace; font-size: 0.9em; }
+  .drop:hover { border-color: var(--accent); }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop p { margin: 0.3em 0; }
+  .filename { color: var(--muted); font-family: ui-monospace, monospace; font-size: 0.88em; }
 
-  .row { display: flex; gap: 1em; margin: 1.2em 0; flex-wrap: wrap; align-items: end; }
-  label { display: flex; flex-direction: column; font-size: 0.8em; gap: 0.3em; color: var(--muted); }
+  .row { display: flex; gap: 0.9em; margin: 1em 0 0.2em; flex-wrap: wrap; align-items: end; }
+  label { display: flex; flex-direction: column; font-size: 0.78em; gap: 0.3em; color: var(--muted); }
   select, input[type=text] {
-    padding: 0.55em 0.7em;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    font: inherit;
+    padding: 0.55em 0.7em; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font: inherit;
   }
+  select:focus, input[type=text]:focus { outline: none; border-color: var(--accent); }
   .source input[type=text] { width: 100%; }
   .source label { width: 100%; }
 
   button {
-    padding: 0.7em 1.4em;
-    border-radius: 6px;
-    border: 0;
-    background: var(--accent);
-    color: white;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 0.6em 1.2em; border-radius: 7px; border: 0;
+    background: var(--accent); color: #fff;
+    font: inherit; font-weight: 600; cursor: pointer;
+    transition: filter 0.12s;
   }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button:hover { filter: brightness(1.1); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
 
   .progress {
-    background: var(--panel);
-    border-radius: 6px;
-    overflow: hidden;
-    height: 8px;
-    margin: 1em 0 0.5em;
-    border: 1px solid var(--border);
+    background: var(--panel-2); border-radius: 99px; overflow: hidden;
+    height: 6px; margin: 0.7em 0 0.5em;
   }
-  .progress > div {
-    background: var(--accent);
-    height: 100%;
-    width: 0%;
-    transition: width 0.3s;
-  }
-  .status {
-    font-family: ui-monospace, monospace;
-    font-size: 0.85em;
-    color: var(--muted);
-  }
-  .downloads { margin-top: 1em; }
+  .progress > div { background: var(--accent); height: 100%; width: 0%; transition: width 0.3s; }
+  .status { font-family: ui-monospace, monospace; font-size: 0.8em; color: var(--muted); }
+  .downloads { margin-top: 0.7em; display: flex; flex-wrap: wrap; gap: 0.4em; }
   .downloads a {
-    display: inline-block;
-    padding: 0.55em 1em;
-    margin: 0.3em 0.3em 0 0;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    text-decoration: none;
-    color: var(--text);
-    font-weight: 600;
-    font-size: 0.85em;
+    padding: 0.4em 0.7em; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 6px;
+    text-decoration: none; color: var(--text);
+    font-weight: 500; font-size: 0.8em;
+    transition: border-color 0.12s, color 0.12s;
   }
-  .downloads a:hover { border-color: var(--accent); }
-  .err { color: var(--error); white-space: pre-wrap; margin-top: 0.5em; font-size: 0.9em; }
-  .panel { padding: 1em; background: var(--panel); border-radius: 10px; border: 1px solid var(--border); }
+  .downloads a:hover { border-color: var(--accent); color: var(--accent); }
+  .err { color: var(--error); white-space: pre-wrap; margin-top: 0.5em; font-size: 0.88em; }
+  .panel { padding: 0.85em 1em; background: var(--panel); border-radius: var(--radius); border: 1px solid var(--border); }
 
-  .summary-panel { margin-bottom: 0; }
+  .summary-panel { margin: 0; }
   .summary-panel .panel-header {
     display: flex; justify-content: space-between; align-items: center;
-    margin: 0 0 0.5em;
+    margin: 0 0 0.6em;
   }
-  .summary-panel h2 { font-size: 1.05em; margin: 0; }
+  .summary-panel h2 { margin: 0; }
   .summary-card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    padding: 0.9em 1em;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1em 1.1em;
+    box-shadow: var(--shadow);
   }
   .summary-meta {
-    font-size: 0.75em; color: var(--muted); font-family: ui-monospace, monospace;
-    margin-bottom: 0.6em; display: flex; gap: 0.8em; flex-wrap: wrap;
+    font-size: 0.72em; color: var(--muted); font-family: ui-monospace, monospace;
+    margin-bottom: 0.7em; padding-bottom: 0.6em;
+    border-bottom: 1px solid var(--divider);
+    display: flex; gap: 0.8em; flex-wrap: wrap;
   }
-  .summary-body { white-space: pre-wrap; line-height: 1.5; font-size: 0.92em; }
-  .summary-empty, .transcript-empty-state {
-    background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
-    padding: 1.5em 1em; text-align: center; color: var(--muted); font-size: 0.9em;
+  .summary-body { white-space: pre-wrap; line-height: 1.6; font-size: 0.9em; }
+  .summary-empty, .transcript-empty-state, .chat-empty {
+    background: var(--panel); border: 1px dashed var(--border);
+    border-radius: var(--radius); padding: 1.6em 1em;
+    text-align: center; color: var(--muted); font-size: 0.88em;
   }
-  .summary-actions { margin-top: 0.6em; display: flex; gap: 0.5em; align-items: center; }
   .ghost.mini { padding: 0.35em 0.7em; font-size: 0.8em; }
 
-  .chat { margin-top: 0; }
-  .chat h2 { font-size: 1.05em; margin: 0 0 0.5em; }
-  .chat-empty {
-    background: var(--panel); border: 1px dashed var(--border); border-radius: 10px;
-    padding: 1.5em 1em; text-align: center; color: var(--muted); font-size: 0.9em;
-  }
+  .chat { margin: 0; }
   .chat-log {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.8em;
-    min-height: 8em;
-    font-size: 0.92em;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.8em;
+    min-height: 6em; font-size: 0.9em; box-shadow: var(--shadow);
   }
-  .msg { margin: 0.4em 0; padding: 0.6em 0.8em; border-radius: 8px; line-height: 1.45; white-space: pre-wrap; }
-  .msg.user { background: rgba(74,158,255,0.15); border: 1px solid rgba(74,158,255,0.3); }
-  .msg.assistant { background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
-  .msg .role { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2em; }
-  .msg .body { white-space: pre-wrap; line-height: 1.45; }
-  .msg .body.empty::after { content: ""; }
+  .msg { margin: 0.45em 0; padding: 0.6em 0.8em; border-radius: 9px; line-height: 1.5; white-space: pre-wrap; }
+  .msg.user { background: var(--accent-soft); border: 1px solid rgba(90,158,246,0.28); }
+  .msg.assistant { background: var(--panel-2); border: 1px solid var(--border); }
+  .msg .role { font-size: 0.66em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25em; font-weight: 600; }
+  .msg .body { white-space: pre-wrap; line-height: 1.5; }
   .gen-status {
     display: flex; align-items: center; gap: 0.5em;
-    color: var(--muted); font-size: 0.78em;
-    margin: 0 0 0.4em;
+    color: var(--muted); font-size: 0.76em; margin: 0 0 0.4em;
   }
   .gen-status[hidden] { display: none; }
   .gen-status code {
-    background: rgba(255,255,255,0.05); padding: 0 0.35em;
-    border-radius: 3px; font-size: 0.95em;
+    background: var(--panel-2); padding: 0.05em 0.35em;
+    border-radius: 4px; font-size: 0.95em;
   }
   .gen-status .elapsed { font-family: ui-monospace, monospace; }
   .spinner {
@@ -268,32 +256,32 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .chat-input { display: flex; gap: 0.5em; margin-top: 0.6em; }
   .chat-input input { flex: 1; min-width: 0; }
-  .chat-input button { padding: 0.6em 0.9em; white-space: nowrap; }
+  .chat-input button { padding: 0.55em 0.9em; white-space: nowrap; }
   .ghost {
     background: transparent; color: var(--muted); border: 1px solid var(--border);
   }
+  .ghost:hover { color: var(--text); border-color: var(--accent); filter: none; }
 
-  .transcript-panel { margin-top: 0; }
-  .transcript-panel h2 { font-size: 1.05em; margin: 0 0 0.5em; }
+  .transcript-panel { margin: 0; }
   .transcript-body {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0.8em 1em;
-    font-size: 0.92em;
-    line-height: 1.5;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.5em 0.55em;
+    font-size: 0.9em; box-shadow: var(--shadow);
   }
-  .tseg { display: flex; gap: 0.9em; padding: 0.2em 0; }
+  .tseg {
+    display: flex; gap: 0.8em; padding: 0.4em 0.55em;
+    border-radius: 7px; transition: background 0.1s;
+  }
+  .tseg:hover { background: var(--panel-2); }
   .tseg .tts {
     color: var(--muted); font-family: ui-monospace, monospace;
-    font-size: 0.78em; flex-shrink: 0; min-width: 5em;
+    font-size: 0.76em; flex-shrink: 0; min-width: 5em;
     padding-top: 0.2em;
   }
   .tseg .tts.clickable { cursor: pointer; color: var(--accent); }
   .tseg .tts.clickable:hover { text-decoration: underline; }
   .tseg.active {
-    background: rgba(74,158,255,0.20);
-    border-radius: 4px;
+    background: var(--accent-soft);
     box-shadow: inset 3px 0 0 var(--accent);
   }
   .tseg.active .ttext { color: #fff; }
@@ -307,37 +295,48 @@
   .player-wrap { margin-bottom: 0; }
   .player-wrap video {
     width: 100%; max-height: 60vh; background: #000;
-    border-radius: 10px; border: 1px solid var(--border);
+    border-radius: var(--radius); border: 1px solid var(--border);
     display: block;
   }
-  .tseg .ttext { flex: 1; word-break: break-word; }
+  .tseg .ttext { flex: 1; word-break: break-word; line-height: 1.55; }
   .transcript-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 
   details.library { margin: 0; }
   details.library summary {
     cursor: pointer; padding: 0.6em 0.9em;
     background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--muted); font-size: 0.9em;
+    color: var(--muted); font-size: 0.78em; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
   }
   details.library summary:hover { color: var(--text); }
   .lib-list {
-    margin-top: 0.6em; display: flex; flex-direction: column; gap: 0.35em;
+    margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;
   }
   .lib-item {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 0.55em 0.8em; border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.55em 0.75em; border: 1px solid var(--border); border-radius: 8px;
     background: var(--panel); cursor: pointer; gap: 0.8em;
+    transition: border-color 0.12s, background 0.12s;
   }
-  .lib-item:hover { border-color: var(--accent); }
-  .lib-item.active { border-color: var(--accent); background: rgba(74,158,255,0.08); }
-  .lib-name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lib-meta { color: var(--muted); font-size: 0.8em; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .lib-item:hover { border-color: var(--accent); background: var(--panel-2); }
+  .lib-item.active { border-color: var(--accent); background: var(--accent-soft); }
+  .lib-name { font-weight: 600; font-size: 0.9em; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-meta { color: var(--muted); font-size: 0.76em; font-family: ui-monospace, monospace; white-space: nowrap; }
   .lib-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 </style>
 </head>
 <body>
-<h1>Local Video Transcriber</h1>
-<p class="sub">faster-whisper + CUDA. Upload a file, pick one already on disk, or paste a YouTube/yt-dlp URL.</p>
+<header class="topbar">
+  <span class="brand-icon">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <path d="M5 9v6M10 5v14M15 7v10M20 10v4"/>
+    </svg>
+  </span>
+  <div>
+    <h1>Local Video Transcriber</h1>
+    <p class="sub">faster-whisper + CUDA · upload, pick a local file, or paste a URL</p>
+  </div>
+</header>
 
 <details class="setup" id="setupPanel" open>
 <summary>New transcription</summary>
