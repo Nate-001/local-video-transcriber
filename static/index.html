@@ -102,8 +102,18 @@
     min-width: 0;
     display: flex; flex-direction: column; gap: 1em;
   }
-  .transcript-body { max-height: 72vh; overflow-y: auto; }
-  #summaryView:not([hidden]) { max-height: 72vh; overflow-y: auto; }
+  /* Transcript and summary are equal height; their content scrolls inside. */
+  .col-transcript, .col-summary { height: 76vh; }
+  .col-transcript #transcript:not([hidden]),
+  .col-summary .summary-panel {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+  }
+  .col-transcript .transcript-body,
+  .col-summary #summaryView:not([hidden]) {
+    flex: 1; min-height: 0; overflow-y: auto;
+  }
+  .col-transcript > h2,
+  .col-summary .panel-header { flex: none; }
   .col-transcript > h2 { margin: 0; }
   .chatzone {
     padding: 1em 1.2em 1.2em;
@@ -115,6 +125,7 @@
   }
   @media (max-width: 1000px) {
     .main { grid-template-columns: 1fr; }
+    .col-transcript, .col-summary { height: auto; }
     .transcript-body, #summaryView { max-height: 60vh; }
   }
   h2 { font-size: 1.05em; font-weight: 650; margin: 0 0 0.6em; }
