@@ -55,13 +55,37 @@
   .topbar h1 { margin: 0; font-size: 1.3em; font-weight: 650; letter-spacing: -0.01em; }
   .sub { color: var(--muted); margin: 0.15em 0 0; font-size: 0.82em; }
 
-  .workspace {
-    display: grid;
-    grid-template-columns: 1.3fr 1.4fr 1.1fr 1.25fr;
-    grid-template-rows: minmax(0, 1fr);
-    gap: 1.1em; margin-top: 0.9em;
+  .viewtabs {
+    margin-left: auto; display: flex; gap: 0.25em;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 9px; padding: 0.22em;
+  }
+  .viewtab {
+    padding: 0.4em 1.15em; border-radius: 7px; border: 0;
+    background: transparent; color: var(--muted);
+    font: inherit; font-size: 0.86em; font-weight: 600; cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+  .viewtab:hover { color: var(--text); filter: none; }
+  .viewtab.active { background: var(--accent); color: #fff; }
+
+  .main {
+    display: flex; gap: 1.1em; margin-top: 0.8em;
     flex: 1; min-height: 0;
   }
+  .sidebar {
+    flex: none; width: 250px;
+    display: flex; flex-direction: column; gap: 1em;
+    overflow-y: auto;
+  }
+  .content { flex: 1; min-width: 0; min-height: 0; }
+  .page { height: 100%; }
+  .page:not(.active) { display: none; }
+  .page.active {
+    display: grid; grid-template-rows: minmax(0, 1fr); gap: 1.1em;
+  }
+  .page-watch.active { grid-template-columns: 1.55fr 1fr; }
+  .page-insights.active { grid-template-columns: 1.2fr 1fr; }
   /* Each column scrolls on its own so the page itself never scrolls. */
   .col {
     min-width: 0; min-height: 0;
@@ -70,7 +94,9 @@
   }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
-    .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
+    .main { flex-direction: column; }
+    .sidebar { width: auto; overflow: visible; }
+    .page.active { grid-template-columns: 1fr; grid-template-rows: none; }
     .col { overflow: visible; }
   }
 
@@ -301,15 +327,15 @@
     margin-top: 0.5em; display: flex; flex-direction: column; gap: 0.3em;
   }
   .lib-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 0.55em 0.75em; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--panel); cursor: pointer; gap: 0.8em;
+    display: flex; flex-direction: column; gap: 0.15em;
+    padding: 0.5em 0.7em; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); cursor: pointer;
     transition: border-color 0.12s, background 0.12s;
   }
   .lib-item:hover { border-color: var(--accent); background: var(--panel-2); }
   .lib-item.active { border-color: var(--accent); background: var(--accent-soft); }
-  .lib-name { font-weight: 600; font-size: 0.9em; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lib-meta { color: var(--muted); font-size: 0.76em; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .lib-name { font-weight: 600; font-size: 0.88em; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-meta { color: var(--muted); font-size: 0.72em; font-family: ui-monospace, monospace; }
   .lib-empty { color: var(--muted); font-size: 0.85em; padding: 0.5em; }
 </style>
 </head>
@@ -320,25 +346,18 @@
       <path d="M5 9v6M10 5v14M15 7v10M20 10v4"/>
     </svg>
   </span>
-  <div>
+  <div class="brand-text">
     <h1>Local Video Transcriber</h1>
     <p class="sub">faster-whisper + CUDA · upload, pick a local file, or paste a URL</p>
   </div>
+  <nav class="viewtabs">
+    <button class="viewtab active" data-view="watch">Watch</button>
+    <button class="viewtab" data-view="insights">Insights</button>
+  </nav>
 </header>
 
-<div class="workspace">
-<section class="col col-video">
-  <div id="playerWrap" class="player-wrap" hidden>
-    <video id="player" controls preload="metadata"></video>
-  </div>
-
-  <div id="panel" class="panel" hidden>
-    <div class="status" id="status">queued</div>
-    <div class="progress"><div id="bar"></div></div>
-    <div class="downloads" id="downloads" hidden></div>
-    <div class="err" id="err"></div>
-  </div>
-
+<div class="main">
+<aside class="sidebar">
   <details class="library" id="libraryWrap" open>
     <summary id="librarySummary">Past transcripts</summary>
     <div class="lib-list" id="libraryList">
@@ -398,6 +417,21 @@
   </div>
   </div><!-- /setup-body -->
   </details>
+</aside>
+
+<div class="content">
+<div class="page page-watch active" data-view="watch">
+<section class="col col-video">
+  <div id="playerWrap" class="player-wrap" hidden>
+    <video id="player" controls preload="metadata"></video>
+  </div>
+
+  <div id="panel" class="panel" hidden>
+    <div class="status" id="status">queued</div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="downloads" id="downloads" hidden></div>
+    <div class="err" id="err"></div>
+  </div>
 </section>
 
 <section class="col col-transcript">
@@ -409,26 +443,9 @@
     <div class="transcript-body" id="transcriptBody"></div>
   </div>
 </section>
+</div><!-- /page-watch -->
 
-<aside class="col chatbar">
-  <div class="chat">
-    <h2>Ask follow-ups</h2>
-    <div id="chatEmpty" class="chat-empty">
-      Load a transcript to ask questions about it.
-    </div>
-    <div id="chat" hidden>
-      <div class="chat-log" id="chatLog"></div>
-      <div class="chat-input">
-        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
-        <button id="chatSend">Send</button>
-        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
-        <button id="chatReset" class="ghost">Clear</button>
-      </div>
-      <div class="err" id="chatErr"></div>
-    </div>
-  </div>
-</aside>
-
+<div class="page page-insights" data-view="insights">
 <section class="col col-summary">
   <div class="summary-panel">
     <div class="panel-header">
@@ -450,7 +467,28 @@
     </div>
   </div>
 </section>
-</div><!-- /workspace -->
+
+<aside class="col chatbar">
+  <div class="chat">
+    <h2>Ask follow-ups</h2>
+    <div id="chatEmpty" class="chat-empty">
+      Load a transcript to ask questions about it.
+    </div>
+    <div id="chat" hidden>
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-input">
+        <input id="chatInput" type="text" placeholder="Ask a follow-up…">
+        <button id="chatSend">Send</button>
+        <select id="chatModel" title="Chat model"><option value="">loading…</option></select>
+        <button id="chatReset" class="ghost">Clear</button>
+      </div>
+      <div class="err" id="chatErr"></div>
+    </div>
+  </div>
+</aside>
+</div><!-- /page-insights -->
+</div><!-- /content -->
+</div><!-- /main -->
 
 <script>
 const drop = document.getElementById('drop');
@@ -474,6 +512,15 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.source').forEach(s => s.classList.toggle('active', s.dataset.source === activeSource));
   });
+});
+
+// Watch / Insights page switcher.
+function setView(v) {
+  document.querySelectorAll('.viewtab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.dataset.view === v));
+}
+document.querySelectorAll('.viewtab').forEach(t => {
+  t.addEventListener('click', () => setView(t.dataset.view));
 });
 
 drop.addEventListener('click', () => fileInput.click());
@@ -564,8 +611,9 @@ async function poll(jobId) {
 }
 
 async function showJobDone(jobId, r) {
-  // Collapse the setup panel so the workspace gets the full screen.
+  // Collapse the setup panel and jump to the Watch page.
   document.getElementById('setupPanel').open = false;
+  setView('watch');
   panel.hidden = false;
   errEl.textContent = '';
   bar.style.width = '100%';
@@ -654,6 +702,7 @@ function tsToSeconds(label) {
 
 function seekTo(seconds) {
   if (!player.src) return;
+  setView('watch');
   player.currentTime = seconds;
   player.play().catch(() => {});
   player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -867,7 +916,7 @@ async function loadLibrary() {
   for (const j of jobs) {
     const r = j.result || {};
     const dur = r.duration ? `${Math.floor(r.duration/60)}m${String(Math.round(r.duration%60)).padStart(2,'0')}s` : '?';
-    const when = j.mtime ? new Date(j.mtime * 1000).toLocaleString() : '';
+    const when = j.mtime ? new Date(j.mtime * 1000).toLocaleDateString() : '';
     const el = document.createElement('div');
     el.className = 'lib-item';
     el.dataset.jobId = j.job_id;
