@@ -29,20 +29,18 @@
     overflow: hidden;
   }
   .workspace {
-    display: flex; flex-direction: column;
-    gap: 1.2em; margin-top: 1em;
-    flex: 1; min-height: 0;
-  }
-  .grid {
     display: grid;
     grid-template-columns: 1.7fr 1.1fr 1.1fr;
-    grid-template-rows: minmax(0, 1fr);
-    gap: 1.5em;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 1.5em; margin-top: 1em;
     flex: 1; min-height: 0;
   }
+  .col-video { grid-column: 1; grid-row: 1 / span 2; }
+  .col-transcript { grid-column: 2; grid-row: 1; }
+  .col-summary { grid-column: 3; grid-row: 1; }
   .chatbar {
-    flex: none; height: 19em; max-height: 42vh;
-    align-self: center; width: 100%; max-width: 820px;
+    grid-column: 2 / span 2; grid-row: 2;
+    height: 19em; max-height: 42vh;
     display: flex; flex-direction: column;
   }
   /* Each column scrolls on its own so the page itself never scrolls. */
@@ -53,7 +51,10 @@
   }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
-    .grid { grid-template-columns: 1fr; grid-template-rows: none; }
+    .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
+    .col-video, .col-transcript, .col-summary, .chatbar {
+      grid-column: auto; grid-row: auto;
+    }
     .chatbar { height: auto; }
     .col { overflow: visible; }
   }
@@ -392,7 +393,6 @@
 </details>
 
 <div class="workspace">
-<div class="grid">
 <section class="col col-video">
   <div id="playerWrap" class="player-wrap" hidden>
     <video id="player" controls preload="metadata"></video>
@@ -444,7 +444,6 @@
     </div>
   </div>
 </section>
-</div><!-- /grid -->
 
 <aside class="chatbar">
   <div class="chat">
