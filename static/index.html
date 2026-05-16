@@ -30,7 +30,7 @@
   }
   .workspace {
     display: grid;
-    grid-template-columns: 1.8fr 1.1fr 1.1fr;
+    grid-template-columns: 1.7fr 1fr 1fr 1fr;
     grid-template-rows: minmax(0, 1fr);
     gap: 1.5em;
     margin-top: 1em;
@@ -41,38 +41,34 @@
   .col {
     min-width: 0; min-height: 0;
     display: flex; flex-direction: column; gap: 1.2em;
-    overflow-y: auto;
+    overflow: hidden;
   }
+  .col-video { overflow-y: auto; }
   @media (max-width: 1100px) {
     body { height: auto; overflow: visible; }
     .workspace { grid-template-columns: 1fr; grid-template-rows: none; }
     .col { overflow: visible; }
   }
 
-  /* Right column: summary on top, chat always visible below — each scrolls
-     within its own region instead of the column scrolling as a whole. */
-  .col-summary { overflow: hidden; }
-  .col-summary .summary-panel { flex: 1; }
-  .col-summary .chat { flex: 1.3; }
+  /* Transcript / summary / chat columns each pin their heading and scroll
+     only the content region below it. */
+  .col-transcript #transcript:not([hidden]),
   .col-summary .summary-panel,
-  .col-summary .chat,
-  .col-summary .summary-card {
-    min-height: 0; display: flex; flex-direction: column;
-  }
-  .col-summary .summary-card { flex: 1; }
-  .col-summary #summaryView:not([hidden]),
-  .col-summary #chat:not([hidden]) {
+  .col-chat .chat,
+  .col-chat #chat:not([hidden]) {
     flex: 1; min-height: 0; display: flex; flex-direction: column;
   }
-  .col-summary .summary-body,
-  .col-summary .chat-log { flex: 1; min-height: 0; overflow-y: auto; }
+  .col-transcript .transcript-body,
+  .col-summary #summaryView:not([hidden]),
+  .col-chat .chat-log {
+    flex: 1; min-height: 0; overflow-y: auto;
+  }
+  .col-transcript #transcript h2,
   .col-summary .panel-header,
-  .col-summary .summary-meta,
-  .col-summary .gen-status,
-  .col-summary .chat h2,
-  .col-summary .chat-input,
-  .col-summary .chat-controls,
-  .col-summary .err { flex: none; }
+  .col-chat .chat h2,
+  .col-chat .chat-input,
+  .col-chat .chat-controls,
+  .col-chat .err { flex: none; }
   h1 { margin: 0 0 0.1em; font-size: 1.6em; }
   .sub { color: var(--muted); margin: 0; font-size: 0.9em; }
 
@@ -404,7 +400,7 @@
   </div>
 </section>
 
-<aside class="col col-summary">
+<section class="col col-summary">
   <div class="summary-panel">
     <div class="panel-header">
       <h2>Summary</h2>
@@ -424,7 +420,9 @@
       <div class="err" id="summaryErr"></div>
     </div>
   </div>
+</section>
 
+<aside class="col col-chat">
   <div class="chat">
     <h2>Ask follow-ups</h2>
     <div id="chatEmpty" class="chat-empty">
@@ -629,7 +627,7 @@ player.addEventListener('timeupdate', () => {
 // Keep the highlighted segment in view by scrolling its column as playback
 // advances (each column scrolls independently; the page does not).
 function keepSegmentVisible(el) {
-  const c = el.closest('.col');
+  const c = transcriptBody;
   if (!c) return;
   const cr = c.getBoundingClientRect();
   const er = el.getBoundingClientRect();
